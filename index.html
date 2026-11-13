@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f3864">
+<title>Staff Attendance</title>
+<style>
+  :root{--navy:#1f3864;--blue:#2f6fde;--green:#1e8e4e;--red:#c62828;--amber:#b26a00;--bg:#f2f4f8;--card:#fff;--muted:#667085;--line:#e3e7ee}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:#1d2433;font-size:15px}
+  header{background:var(--navy);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:5}
+  header h1{margin:0;font-size:17px}
+  header .sub{font-size:12px;opacity:.85;margin-top:2px}
+  header .out{float:right;background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:6px;padding:4px 10px;font-size:12px}
+  main{max-width:760px;margin:0 auto;padding:12px}
+  .card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(16,24,40,.08)}
+  .card h2{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+  input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:16px;background:#fff;font-family:inherit}
+  textarea{min-height:70px;resize:vertical}
+  button{font-family:inherit;cursor:pointer}
+  .btn{width:100%;padding:13px;border:0;border-radius:10px;font-size:16px;font-weight:600;color:#fff;background:var(--blue)}
+  .btn.sm{width:auto;padding:9px 14px;font-size:14px}
+  .btn.ghost{background:#eef2fb;color:var(--navy)}
+  .btn.in{background:var(--green)} .btn.outb{background:var(--red)}
+  .btn:disabled{opacity:.5}
+  .row{display:flex;gap:8px;align-items:center}
+  .row>*{flex:1}
+  .wrap{flex-wrap:wrap}
+  .tabs{display:flex;gap:6px;margin-bottom:12px}
+  .tabs button{flex:1;padding:10px 4px;border:0;border-radius:8px;background:#e4e9f2;color:var(--navy);font-weight:600;font-size:14px}
+  .tabs button.active{background:var(--navy);color:#fff}
+  .pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600}
+  .ok{background:#e3f4ea;color:var(--green)} .bad{background:#fdeaea;color:var(--red)} .warn{background:#fff3e0;color:var(--amber)}
+  .muted{color:var(--muted);font-size:13px}
+  .big{font-size:20px;font-weight:700;color:var(--navy)}
+  video,#selfiePreview{width:100%;max-width:320px;border-radius:10px;background:#000;display:block;margin:8px auto}
+  #selfiePreview{background:none}
+  .msg{padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:14px;white-space:pre-line}
+  .msg.e{background:#fdeaea;color:var(--red)} .msg.s{background:#e3f4ea;color:var(--green)} .msg.i{background:#eef2fb;color:var(--navy)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border-bottom:1px solid var(--line);padding:6px 5px;text-align:left;vertical-align:top}
+  th{background:#f6f8fb;color:var(--navy);position:sticky;top:0;white-space:nowrap}
+  .scroll{overflow-x:auto;max-height:65vh}
+  #rDetail table{min-width:1000px} #rDetail td{min-width:70px} #rDetail td:nth-child(8){min-width:220px}
+  .hist-item{border-bottom:1px solid var(--line);padding:8px 0}
+  .hidden{display:none!important}
+  a{color:var(--blue)}
+  .linkbtn{background:none;border:0;color:var(--blue);padding:0;font-size:13px;text-decoration:underline}
+  .spinner{position:fixed;inset:0;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;z-index:20;font-weight:600;color:var(--navy)}
+  .foot{text-align:center;font-size:11px;color:var(--muted);margin:16px 0}
+</style>
+</head>
+<body>
+<header>
+  <button class="out hidden" id="logoutBtn">Logout</button>
+  <h1 id="firmName">Staff Attendance</h1>
+  <div class="sub" id="userLine">Check-in / Check-out at client site</div>
+</header>
+
+<main>
+  <div id="msg"></div>
+
+  <!-- ================= LOGIN ================= -->
+  <section id="loginView" class="card">
+    <h2>Login</h2>
+    <label>Employee ID</label>
+    <input id="empCode" autocomplete="username" autocapitalize="characters" placeholder="e.g. EMP001 or ADMIN">
+    <label>Password</label>
+    <div class="row">
+      <input id="password" type="password" autocomplete="current-password" placeholder="Password">
+      <button type="button" class="btn ghost sm" id="showPw" style="flex:0 0 auto">Show</button>
+    </div>
+    <br><button class="btn" id="loginBtn">Login</button>
+    <p class="muted" style="margin-top:14px">Trouble logging in? <button class="linkbtn" id="testBtn">Test connection</button></p>
+  </section>
+
+  <!-- ================= APP ================= -->
+  <section id="appView" class="hidden">
+    <div class="tabs">
+      <button data-tab="punchTab" class="active">Punch</button>
+      <button data-tab="accTab">My Account</button>
+      <button data-tab="adminTab" class="hidden" id="adminTabBtn">Admin</button>
+    </div>
+
+    <!-- ---------- PUNCH ---------- -->
+    <div id="punchTab">
+      <div class="card" id="statusCard"></div>
+
+      <div class="card">
+        <h2>1. Client site</h2>
+        <select id="siteSelect"></select>
+        <div id="siteFixed" class="hidden"></div>
+      </div>
+
+      <div class="card">
+        <h2>2. Location</h2>
+        <div id="locInfo" class="muted">Getting your location…</div>
+        <br><button class="btn ghost sm" id="locBtn">↻ Refresh location</button>
+      </div>
+
+      <div class="card">
+        <h2>3. Selfie</h2>
+        <video id="video" autoplay playsinline muted class="hidden"></video>
+        <img id="selfiePreview" class="hidden" alt="selfie">
+        <canvas id="canvas" class="hidden"></canvas>
+        <div class="row">
+          <button class="btn ghost sm" id="camBtn">📷 Take selfie</button>
+          <button class="btn sm hidden" id="snapBtn">Capture</button>
+          <button class="btn ghost sm hidden" id="retakeBtn">Retake</button>
+        </div>
+        <input type="file" id="fileSelfie" accept="image/*" capture="user" class="hidden">
+        <div class="muted" id="camNote" style="margin-top:6px"></div>
+      </div>
+
+      <div class="card hidden" id="workCard">
+        <h2>4. Work done (timesheet)</h2>
+        <label>Work area</label>
+        <select id="workArea">
+          <option>Statutory Audit – Planning</option><option>Vouching / Verification</option>
+          <option>Fixed Assets</option><option>Inventory / Stock</option><option>Revenue &amp; Receivables</option>
+          <option>Purchases &amp; Payables</option><option>Bank &amp; Cash</option><option>Payroll</option>
+          <option>GST</option><option>TDS / TCS</option><option>Income Tax</option><option>Tax Audit (3CD)</option>
+          <option>Internal Audit</option><option>ROC / Secretarial</option><option>Transfer Pricing</option>
+          <option>Accounting / Finalisation</option><option>Client meeting</option><option>Other</option>
+        </select>
+        <label>Work done (procedure, period, sample size, exceptions)</label>
+        <textarea id="workDone" placeholder="e.g. Vouched 45 purchase invoices for Oct-26, 3 exceptions noted"></textarea>
+        <label>Working paper reference</label>
+        <input id="wpRef" placeholder="e.g. P-3.1">
+        <label>Pending items / queries raised</label>
+        <textarea id="pending" placeholder="e.g. Query list sent to accountant"></textarea>
+      </div>
+
+      <div class="card">
+        <label style="margin-top:0">Remarks <span id="remarkReq" class="pill bad hidden">required – outside site</span></label>
+        <input id="remarks" placeholder="Optional (e.g. at client's warehouse)">
+        <br><br>
+        <button class="btn in" id="punchBtn">CHECK IN</button>
+      </div>
+    </div>
+
+    <!-- ---------- MY ACCOUNT ---------- -->
+    <div id="accTab" class="hidden">
+      <div class="card"><h2>My last 20 punches</h2><div id="histList" class="muted">Loading…</div></div>
+      <div class="card">
+        <h2>Change my password</h2>
+        <label>Current password</label><input id="pwOld" type="password" autocomplete="current-password">
+        <label>New password (min 6 characters)</label><input id="pwNew" type="password" autocomplete="new-password">
+        <label>Confirm new password</label><input id="pwNew2" type="password" autocomplete="new-password">
+        <br><br><button class="btn sm" id="pwBtn">Change password</button>
+      </div>
+    </div>
+
+    <!-- ---------- ADMIN ---------- -->
+    <div id="adminTab" class="hidden">
+      <div class="tabs" id="adminSub">
+        <button data-sub="aReport" class="active">Report</button>
+        <button data-sub="aStaff">Staff</button>
+        <button data-sub="aSites">Sites</button>
+      </div>
+
+      <div id="aReport">
+        <div class="card">
+          <h2>Attendance report</h2>
+          <div class="row">
+            <div><label>From</label><input type="date" id="rFrom"></div>
+            <div><label>To</label><input type="date" id="rTo"></div>
+          </div>
+          <label>Staff</label>
+          <select id="rEmp"><option value="">All staff</option></select>
+          <br><br>
+          <div class="row">
+            <button class="btn sm" id="rRun">Show report</button>
+            <button class="btn ghost sm" id="rCsv">Export CSV</button>
+          </div>
+        </div>
+        <div class="card hidden" id="rSummaryCard"><h2>Summary</h2><div class="scroll" id="rSummary"></div></div>
+        <div class="card hidden" id="rDetailCard"><h2>Detail (each visit)</h2><div class="scroll" id="rDetail"></div></div>
+      </div>
+
+      <div id="aStaff" class="hidden">
+        <div class="card">
+          <h2 id="stTitle">Add staff</h2>
+          <div class="row">
+            <div><label>Employee ID</label><input id="stCode" autocapitalize="characters" placeholder="EMP002"></div>
+            <div><label>Name</label><input id="stName"></div>
+          </div>
+          <div class="row">
+            <div><label>Role</label><select id="stRole"><option>Staff</option><option>Admin</option></select></div>
+            <div><label>Mobile</label><input id="stMobile" inputmode="tel"></div>
+          </div>
+          <label id="stPwLabel">Password (min 6 characters)</label><input id="stPw" type="text" autocomplete="off">
+          <label class="row" style="color:#1d2433"><input type="checkbox" id="stActive" style="width:auto;flex:0" checked> <span>Active</span></label>
+          <br>
+          <div class="row">
+            <button class="btn sm" id="stSave">Save</button>
+            <button class="btn ghost sm hidden" id="stCancel">Cancel edit</button>
+          </div>
+        </div>
+        <div class="card"><h2>All staff</h2><div class="scroll" id="staffList">Loading…</div></div>
+      </div>
+
+      <div id="aSites" class="hidden">
+        <div class="card">
+          <h2>Add client site</h2>
+          <p class="muted">Best done while standing at the client's office: tap “Use my current location”. Or paste coordinates from Google Maps (long-press the place → copy the two numbers).</p>
+          <label>Client name</label><input id="sClient" placeholder="e.g. ABC Industries Ltd">
+          <label>Site / branch</label><input id="sSite" placeholder="e.g. Andheri office / Silvassa plant">
+          <label>Address (optional)</label><input id="sAddr">
+          <div class="row">
+            <div><label>Latitude</label><input id="sLat" inputmode="decimal"></div>
+            <div><label>Longitude</label><input id="sLng" inputmode="decimal"></div>
+          </div>
+          <label>Geo-fence radius (metres)</label><input id="sRad" type="number" value="200">
+          <br><br>
+          <div class="row">
+            <button class="btn ghost sm" id="sHere">📍 Use my current location</button>
+            <button class="btn sm" id="sAdd">Add site</button>
+          </div>
+        </div>
+        <div class="card"><h2>Active sites</h2><div class="scroll" id="siteList"></div></div>
+      </div>
+    </div>
+  </section>
+  <div class="foot" id="foot">App v2.0</div>
+</main>
+
+<div class="spinner hidden" id="spinner">Please wait…</div>
+
+<script>
+/* ========= CONFIG: your Apps Script Web App URL (ends with /exec) ========= */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNxOBL1h0AVLOfF6x1uAMLpDxzfzD3yAmJ57hT1DIrEyKhtz7F-oDQycnq-PXIYwID/exec';
+/* ========================================================================= */
+const APP_VERSION = '2.0';
+
+const $ = id => document.getElementById(id);
+const S = { token:'', user:null, sites:[], status:null, pos:null, selfie:'', stream:null, report:null, staff:[], editing:null };
+
+function store(k, v){ try{ v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); }catch(e){} }
+function load(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function show(el, yes){ el.classList.toggle('hidden', !yes); }
+function flash(text, kind){ $('msg').innerHTML = text ? `<div class="msg ${kind||'e'}">${esc(text)}</div>` : ''; if (text) window.scrollTo({top:0,behavior:'smooth'}); }
+function busy(on){ show($('spinner'), on); }
+
+/* ---------------- SERVER CALL with clear error messages ---------------- */
+async function api(action, data){
+  const url = SCRIPT_URL.trim();
+  if (url.indexOf('http') !== 0) throw new Error('[Error A] The Web App URL has not been pasted into index.html (SCRIPT_URL).');
+  if (!/\/exec$/.test(url)) throw new Error('[Error B] SCRIPT_URL must be the Web App URL ending with /exec.');
+  let res, text;
+  try {
+    res = await fetch(url, { method:'POST', body: JSON.stringify(Object.assign({ action, token:S.token }, data||{})) });
+    text = await res.text();
+  } catch (e) {
+    throw new Error('[Error C] Cannot reach the server.\n• Check the phone has internet.\n• In Apps Script the deployment must be "Execute as: Me" and "Who has access: Anyone".\n• Company Google Workspace accounts may block this – deploy from a personal Gmail account.');
+  }
+  let j;
+  try { j = JSON.parse(text); }
+  catch (e) {
+    if (/Script function not found/i.test(text))
+      throw new Error('[Error D1] The Web App does not contain the attendance code.\nIn Apps Script: paste the full Code.gs → Save → Deploy → Manage deployments → ✏ Edit → Version: NEW VERSION → Deploy.');
+    if (/sign in|accounts\.google|ServiceLogin/i.test(text))
+      throw new Error('[Error D2] Google is asking for sign-in. Set "Who has access: Anyone" in Deploy → Manage deployments → Edit, and deploy a new version.');
+    throw new Error('[Error D3] Server did not return app data (HTTP ' + res.status + '). Redeploy a NEW VERSION and run setup in Apps Script.');
+  }
+  if (!j.ok){
+    if (j.authError){ store('att_token', null); S.token=''; }
+    const err = new Error(j.error || 'Server error'); err.authError = j.authError; throw err;
+  }
+  return j;
+}
+
+/* ---------------- TEST CONNECTION ---------------- */
+$('testBtn').onclick = async () => {
+  busy(true);
+  try{
+    const r = await api('ping');
+    flash(`Connected ✓  Backend version ${r.version || '?'}\n` +
+      (r.version !== APP_VERSION ? `⚠ Version mismatch: phone app is ${APP_VERSION}. Paste the latest Code.gs and deploy a NEW VERSION.\n` : '') +
+      (r.ready ? 'Setup: READY – you can log in.' : 'Setup NOT ready:\n- ' + (r.problems||[]).join('\n- ') + '\nOpen Apps Script and run setup.'),
+      r.ready && r.version === APP_VERSION ? 's' : 'e');
+  }catch(e){ flash(e.message); }
+  finally{ busy(false); }
+};
+
+/* ---------------- LOGIN / SESSION ---------------- */
+function startSession(r){
+  S.user = r.user; S.sites = r.sites; S.status = r.status; S.strict = r.strict; S.maxAcc = r.maxAcc;
+  $('firmName').textContent = r.firmName;
+  $('userLine').textContent = `${r.user.name} (${r.user.empCode})${r.user.role==='Admin' ? ' · Admin' : ''}`;
+  show($('loginView'), false); show($('appView'), true); show($('logoutBtn'), true);
+  show($('adminTabBtn'), r.user.role === 'Admin');
+  $('foot').textContent = `App v${APP_VERSION} · Server v${r.version}`;
+  if (r.version !== APP_VERSION) flash(`Note: server is v${r.version}, app is v${APP_VERSION}. Ask admin to deploy the latest Code.gs as a NEW VERSION.`, 'i');
+  renderPunch(); getLocation();
+}
+$('loginBtn').onclick = async () => {
+  const code = $('empCode').value.trim(), pw = $('password').value;
+  if (!code || !pw) return flash('Enter Employee ID and password.');
+  busy(true);
+  try{
+    const r = await api('login', { empCode: code, password: pw });
+    S.token = r.token; store('att_token', r.token); store('att_code', code.toUpperCase());
+    $('password').value = ''; flash('');
+    startSession(r);
+  }catch(e){ flash(e.message); }
+  finally{ busy(false); }
+};
+$('password').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
+$('showPw').onclick = () => { const p = $('password'), h = p.type === 'password'; p.type = h ? 'text' : 'password'; $('showPw').textContent = h ? 'Hide' : 'Show'; };
+$('logoutBtn').onclick = () => { store('att_token', null); stopCam(); location.reload(); };
+
+/* ---------------- TABS ---------------- */
+document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button[data-tab]').forEach(x => x.classList.toggle('active', x === b));
+  ['punchTab','accTab','adminTab'].forEach(t => show($(t), t === b.dataset.tab));
+  flash('');
+  if (b.dataset.tab === 'accTab') loadHistory();
+  if (b.dataset.tab === 'adminTab') initAdmin();
+});
+document.querySelectorAll('#adminSub button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#adminSub button').forEach(x => x.classList.toggle('active', x === b));
+  ['aReport','aStaff','aSites'].forEach(t => show($(t), t === b.dataset.sub));
+  flash('');
+  if (b.dataset.sub === 'aStaff') loadStaff();
+  if (b.dataset.sub === 'aSites') renderSites();
+});
+function handleErr(e){ if (e.authError){ flash(e.message); setTimeout(() => location.reload(), 1500); } else flash(e.message); }
+
+/* ---------------- PUNCH VIEW ---------------- */
+function isOut(){ return !!(S.status && S.status.openIn); }
+function renderPunch(){
+  const st = S.status || {};
+  if (st.openIn){
+    $('statusCard').innerHTML = `<div class="muted">Current status</div><div class="big">Checked IN</div>
+      at <b>${esc(st.openIn.client)}</b> – ${esc(st.openIn.site)} since <b>${esc(st.openIn.date)} ${esc(st.openIn.time)}</b>
+      ${st.openIn.within==='No' ? ' <span class="pill bad">outside geo-fence</span>' : ''}`;
+  } else {
+    const last = st.last ? `Last punch: ${esc(st.last.type)} at ${esc(st.last.client)} on ${esc(st.last.date)} ${esc(st.last.time)}` : 'No punches yet.';
+    $('statusCard').innerHTML = `<div class="muted">Current status</div><div class="big">Not checked in</div><div class="muted">${last}</div>`;
+  }
+  const sel = $('siteSelect'), keep = sel.value;
+  sel.innerHTML = '<option value="">— Select client site —</option>' +
+    S.sites.map(s => `<option value="${esc(s.id)}">${esc(s.client)} – ${esc(s.site)}</option>`).join('');
+  if (S.sites.some(s => s.id === keep)) sel.value = keep;
+  if (isOut()){
+    $('siteFixed').innerHTML = `<b>${esc(st.openIn.client)}</b> – ${esc(st.openIn.site)}<div class="muted">Check-out is recorded against the site you checked in at.</div>`;
+    show(sel, false); show($('siteFixed'), true);
+  } else { show(sel, true); show($('siteFixed'), false); }
+  show($('workCard'), isOut());
+  $('punchBtn').textContent = isOut() ? 'CHECK OUT' : 'CHECK IN';
+  $('punchBtn').className = 'btn ' + (isOut() ? 'outb' : 'in');
+  if (!S.sites.length) $('siteSelect').innerHTML = '<option value="">No client sites yet – ask admin to add</option>';
+  updateLocInfo();
+}
+$('siteSelect').onchange = updateLocInfo;
+
+/* ---------------- LOCATION ---------------- */
+function distM(lat1,lng1,lat2,lng2){
+  const R=6371000, r=d=>d*Math.PI/180, dLa=r(lat2-lat1), dLo=r(lng2-lng1);
+  const a=Math.sin(dLa/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLo/2)**2;
+  return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function selectedSite(){
+  const id = isOut() ? S.status.openIn.siteId : $('siteSelect').value;
+  return S.sites.find(s => s.id === id);
+}
+function getLocation(){
+  if (!window.isSecureContext){ $('locInfo').innerHTML = '<span class="pill bad">Not a secure (https) page</span><div class="muted">Open the app from its https:// link (e.g. Netlify), not as a file.</div>'; return; }
+  if (!navigator.geolocation){ $('locInfo').innerHTML = '<span class="pill bad">Location not supported on this browser</span>'; return; }
+  $('locInfo').textContent = 'Getting your location…';
+  navigator.geolocation.getCurrentPosition(p => {
+    S.pos = { lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy };
+    if (!isOut() && !$('siteSelect').value){
+      let best = null;
+      S.sites.forEach(s => { const d = distM(S.pos.lat,S.pos.lng,s.lat,s.lng); if (d <= s.radius && (!best || d < best.d)) best = {id:s.id,d}; });
+      if (best) $('siteSelect').value = best.id;
+    }
+    updateLocInfo();
+  }, err => {
+    S.pos = null;
+    const tips = err.code === 1
+      ? 'Location permission is blocked. Android Chrome: tap the 🔒 icon left of the address → Permissions → Location → Allow. iPhone: Settings → Privacy → Location Services → Safari Websites → While Using.'
+      : 'Turn on GPS / Location on the phone, move near a window, then tap Refresh.';
+    $('locInfo').innerHTML = `<span class="pill bad">Location not available</span><div class="muted" style="margin-top:6px">${esc(tips)}</div>`;
+  }, { enableHighAccuracy:true, timeout:25000, maximumAge:0 });
+}
+$('locBtn').onclick = getLocation;
+function updateLocInfo(){
+  if (!S.pos) return;
+  const s = selectedSite();
+  let html = `Lat ${S.pos.lat.toFixed(6)}, Long ${S.pos.lng.toFixed(6)} · accuracy ±${Math.round(S.pos.acc)} m`;
+  if (S.pos.acc > (S.maxAcc||150)) html += ` <span class="pill warn">weak GPS – move near a window</span>`;
+  let outside = false;
+  if (s){
+    const d = Math.round(distM(S.pos.lat,S.pos.lng,s.lat,s.lng));
+    outside = d > s.radius + Math.min(S.pos.acc, 50);
+    html += `<div style="margin-top:8px">${outside
+      ? `<span class="pill bad">Outside geo-fence</span> ${d} m from site (allowed ${s.radius} m)`
+      : `<span class="pill ok">Inside geo-fence</span> ${d} m from site`}</div>`;
+    if (outside && S.strict) html += `<div class="muted">Your firm blocks punches outside the site.</div>`;
+  }
+  $('locInfo').innerHTML = html;
+  show($('remarkReq'), outside);
+}
+
+/* ---------------- CAMERA / SELFIE ---------------- */
+async function startCam(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ $('fileSelfie').click(); return; }
+  try{
+    S.stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user', width:{ideal:640} }, audio:false });
+    $('video').srcObject = S.stream;
+    show($('video'), true); show($('selfiePreview'), false);
+    show($('snapBtn'), true); show($('camBtn'), false); show($('retakeBtn'), false);
+    $('camNote').textContent = '';
+  }catch(e){
+    $('camNote').textContent = 'Live camera not allowed – opening the phone camera instead.';
+    $('fileSelfie').click();
+  }
+}
+function stopCam(){ if (S.stream){ S.stream.getTracks().forEach(t => t.stop()); S.stream = null; } show($('video'), false); }
+function stampAndSave(source, w, h){
+  if (!w || !h) return flash('Camera not ready yet – wait a second and tap Capture again.');
+  const W = 480, H = Math.round(h * W / w), c = $('canvas'), ctx = c.getContext('2d');
+  c.width = W; c.height = H;
+  ctx.drawImage(source, 0, 0, W, H);
+  const s = selectedSite();
+  ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, H-46, W, 46);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 15px sans-serif';
+  ctx.fillText(new Date().toLocaleString('en-IN'), 10, H-26);
+  ctx.font = '14px sans-serif'; ctx.fillText(`${S.user.empCode} · ${s ? s.client : ''}`, 10, H-8);
+  S.selfie = c.toDataURL('image/jpeg', 0.7);
+  $('selfiePreview').src = S.selfie;
+  show($('selfiePreview'), true); show($('snapBtn'), false); show($('camBtn'), false); show($('retakeBtn'), true);
+}
+$('camBtn').onclick = startCam;
+$('snapBtn').onclick = () => { const v = $('video'); stampAndSave(v, v.videoWidth, v.videoHeight); if (S.selfie) stopCam(); };
+$('retakeBtn').onclick = () => { S.selfie = ''; show($('selfiePreview'), false); startCam(); };
+$('fileSelfie').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image();
+  img.onload = () => { stampAndSave(img, img.naturalWidth, img.naturalHeight); URL.revokeObjectURL(img.src); e.target.value = ''; };
+  img.src = URL.createObjectURL(f);
+};
+
+/* ---------------- SUBMIT PUNCH ---------------- */
+$('punchBtn').onclick = async () => {
+  const type = isOut() ? 'OUT' : 'IN';
+  const s = selectedSite();
+  if (!s) return flash('Please select the client site.');
+  if (!S.pos) return flash('Location not available yet. Tap “Refresh location”.');
+  if (!S.selfie) return flash('Please take a selfie.');
+  if (type === 'OUT' && !$('workDone').value.trim()) return flash('Please enter the work done before checking out.');
+  busy(true);
+  try{
+    const r = await api('punch', {
+      type, siteId: s.id, lat: S.pos.lat, lng: S.pos.lng, accuracy: S.pos.acc, selfie: S.selfie,
+      remarks: $('remarks').value, workArea: $('workArea').value, workDone: $('workDone').value,
+      wpRef: $('wpRef').value, pending: $('pending').value, deviceTime: Date.now(), device: navigator.userAgent
+    });
+    S.status = r.status; S.selfie = '';
+    ['remarks','workDone','wpRef','pending'].forEach(id => $(id).value = '');
+    show($('selfiePreview'), false); show($('camBtn'), true); show($('retakeBtn'), false);
+    renderPunch();
+    flash('✔ ' + r.message, 's');
+  }catch(e){ handleErr(e); }
+  finally{ busy(false); }
+};
+
+/* ---------------- MY ACCOUNT ---------------- */
+async function loadHistory(){
+  $('histList').textContent = 'Loading…';
+  try{
+    const r = await api('history');
+    $('histList').innerHTML = r.items.length ? r.items.map(i => `<div class="hist-item">
+      <span class="pill ${i.type==='IN'?'ok':'warn'}">${esc(i.type)}</span> <b>${esc(i.date)} ${esc(i.time)}</b>
+      <div>${esc(i.client)} – ${esc(i.site)} ${i.within==='No'?'<span class="pill bad">outside</span>':''}</div>
+      ${i.workDone?`<div class="muted">${esc(i.workDone)}</div>`:''}
+      ${i.flags?`<div class="muted">⚑ ${esc(i.flags)}</div>`:''}</div>`).join('') : 'No punches yet.';
+  }catch(e){ $('histList').textContent = ''; handleErr(e); }
+}
+$('pwBtn').onclick = async () => {
+  if ($('pwNew').value !== $('pwNew2').value) return flash('New passwords do not match.');
+  busy(true);
+  try{
+    const r = await api('changePassword', { oldPassword:$('pwOld').value, newPassword:$('pwNew').value });
+    S.token = r.token; store('att_token', r.token);
+    ['pwOld','pwNew','pwNew2'].forEach(id => $(id).value = '');
+    flash('✔ ' + r.message, 's');
+  }catch(e){ handleErr(e); }
+  finally{ busy(false); }
+};
+
+/* ---------------- ADMIN: REPORT ---------------- */
+let adminReady = false;
+function todayISO(){ const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+function initAdmin(){ if (!adminReady){ $('rFrom').value = todayISO(); $('rTo').value = todayISO(); adminReady = true; runReport(); } }
+async function runReport(){
+  busy(true);
+  try{
+    const r = await api('report', { from:$('rFrom').value, to:$('rTo').value, filterEmp:$('rEmp').value });
+    S.report = r; S.sites = r.sites;
+    const cur = $('rEmp').value;
+    $('rEmp').innerHTML = '<option value="">All staff</option>' + r.staff.map(s => `<option value="${esc(s.empCode)}">${esc(s.name)} (${esc(s.empCode)})</option>`).join('');
+    $('rEmp').value = cur;
+    renderReport();
+  }catch(e){ handleErr(e); }
+  finally{ busy(false); }
+}
+$('rRun').onclick = runReport;
+function fence(v){ return v==='Yes' ? '<span class="pill ok">✓</span>' : v==='No' ? '<span class="pill bad">✗</span>' : ''; }
+function renderReport(){
+  const ss = S.report.sessions, sum = {};
+  ss.forEach(s => {
+    const k = s.empCode; sum[k] = sum[k] || { name:s.name, days:new Set(), visits:0, hours:0, flagged:0, clients:new Set() };
+    sum[k].days.add(s.date); sum[k].visits++; sum[k].hours += Number(s.hours)||0; sum[k].clients.add(s.client);
+    if (s.flags) sum[k].flagged++;
+  });
+  $('rSummary').innerHTML = Object.keys(sum).length ? `<table><tr><th>Staff</th><th>Days</th><th>Visits</th><th>Hours</th><th>Clients</th><th>Flagged</th></tr>` +
+    Object.keys(sum).map(k => { const x = sum[k]; return `<tr><td>${esc(x.name)}<div class="muted">${esc(k)}</div></td><td>${x.days.size}</td><td>${x.visits}</td><td>${x.hours.toFixed(2)}</td><td>${esc([...x.clients].join(', '))}</td><td>${x.flagged?`<span class="pill bad">${x.flagged}</span>`:'0'}</td></tr>`; }).join('') + '</table>'
+    : '<div class="muted">No attendance in this period.</div>';
+  $('rDetail').innerHTML = ss.length ? `<table><tr><th>Date</th><th>Staff</th><th>Client / Site</th><th>In</th><th>Out</th><th>Hrs</th><th>Fence</th><th>Work done</th><th>Flags / Remarks</th><th>Selfies</th></tr>` +
+    ss.map(s => `<tr><td>${esc(s.date)}</td><td>${esc(s.name)}</td><td>${esc(s.client)}<div class="muted">${esc(s.site)}</div></td>
+      <td>${esc(s.inTime)}</td><td>${s.outTime ? esc(s.outTime) : '<span class="pill bad">—</span>'}</td><td>${s.hours ? Number(s.hours).toFixed(2) : ''}</td>
+      <td>${fence(s.inFence)} ${fence(s.outFence)}</td>
+      <td>${s.workArea?`<b>${esc(s.workArea)}</b><br>`:''}${esc(s.workDone)}${s.wpRef?`<div class="muted">WP: ${esc(s.wpRef)}</div>`:''}${s.pending?`<div class="muted">Pending: ${esc(s.pending)}</div>`:''}</td>
+      <td>${s.flags?`<span class="pill bad">${esc(s.flags)}</span>`:''}${s.remarks?`<div class="muted">${esc(s.remarks)}</div>`:''}</td>
+      <td>${s.selfieIn?`<a href="${esc(s.selfieIn)}" target="_blank" rel="noopener">In</a>`:''} ${s.selfieOut?`<a href="${esc(s.selfieOut)}" target="_blank" rel="noopener">Out</a>`:''}</td></tr>`).join('') + '</table>'
+    : '<div class="muted">No visits.</div>';
+  show($('rSummaryCard'), true); show($('rDetailCard'), true);
+}
+$('rCsv').onclick = () => {
+  if (!S.report) return flash('Run the report first.');
+  const cols = ['date','empCode','name','client','site','inTime','outTime','hours','inFence','outFence','workArea','workDone','wpRef','pending','flags','remarks','selfieIn','selfieOut'];
+  const q = v => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+  const csv = [cols.join(',')].concat(S.report.sessions.map(s => cols.map(c => q(s[c])).join(','))).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type:'text/csv' }));
+  a.download = `attendance_${S.report.from}_to_${S.report.to}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
+/* ---------------- ADMIN: STAFF ---------------- */
+async function loadStaff(){
+  try{ const r = await api('listStaff'); S.staff = r.staff; renderStaff(); }catch(e){ handleErr(e); }
+}
+function renderStaff(){
+  $('staffList').innerHTML = S.staff.length ? '<table><tr><th>ID</th><th>Name</th><th>Role</th><th>Mobile</th><th>Status</th><th></th></tr>' +
+    S.staff.map((s,i) => `<tr><td>${esc(s.empCode)}</td><td>${esc(s.name)}</td><td>${esc(s.role)}</td><td>${esc(s.mobile)}</td>
+      <td>${s.active ? '<span class="pill ok">Active</span>' : '<span class="pill bad">Inactive</span>'}</td>
+      <td><button class="btn ghost sm" data-edit="${i}">Edit</button></td></tr>`).join('') + '</table>' : 'No staff.';
+  $('staffList').querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editStaff(S.staff[b.dataset.edit]));
+}
+function editStaff(s){
+  S.editing = s ? s.empCode : null;
+  $('stTitle').textContent = s ? `Edit ${s.empCode}` : 'Add staff';
+  $('stCode').value = s ? s.empCode : ''; $('stCode').disabled = !!s;
+  $('stName').value = s ? s.name : ''; $('stRole').value = s ? s.role : 'Staff';
+  $('stMobile').value = s ? s.mobile : ''; $('stActive').checked = s ? s.active : true; $('stPw').value = '';
+  $('stPwLabel').textContent = s ? 'New password (leave blank to keep current)' : 'Password (min 6 characters)';
+  show($('stCancel'), !!s);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('stCancel').onclick = () => editStaff(null);
+$('stSave').onclick = async () => {
+  busy(true);
+  try{
+    const r = await api('saveStaff', { empCode:$('stCode').value, name:$('stName').value, role:$('stRole').value,
+      mobile:$('stMobile').value, password:$('stPw').value, active:$('stActive').checked });
+    S.staff = r.staff; renderStaff(); editStaff(null); flash('✔ ' + r.message, 's');
+  }catch(e){ handleErr(e); }
+  finally{ busy(false); }
+};
+
+/* ---------------- ADMIN: SITES ---------------- */
+function renderSites(){
+  $('siteList').innerHTML = S.sites.length ? '<table><tr><th>ID</th><th>Client</th><th>Site</th><th>Radius</th><th>Map</th><th></th></tr>' +
+    S.sites.map(s => `<tr><td>${esc(s.id)}</td><td>${esc(s.client)}</td><td>${esc(s.site)}</td><td>${s.radius} m</td>
+      <td><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${s.lat},${s.lng}">view</a></td>
+      <td><button class="btn ghost sm" data-off="${esc(s.id)}">Deactivate</button></td></tr>`).join('') + '</table>'
+    : '<div class="muted">No sites yet.</div>';
+  $('siteList').querySelectorAll('[data-off]').forEach(b => b.onclick = async () => {
+    busy(true);
+    try{ const r = await api('updateSite', { siteId:b.dataset.off, active:false }); S.sites = r.sites; renderSites(); renderPunch(); flash('✔ ' + r.message, 's'); }
+    catch(e){ handleErr(e); } finally{ busy(false); }
+  });
+}
+$('sHere').onclick = () => {
+  if (!navigator.geolocation) return flash('Location not supported on this browser.');
+  navigator.geolocation.getCurrentPosition(p => {
+    $('sLat').value = p.coords.latitude.toFixed(6); $('sLng').value = p.coords.longitude.toFixed(6);
+    flash(`Location captured (accuracy ±${Math.round(p.coords.accuracy)} m).`, 's');
+  }, e => flash('Could not get location: ' + e.message), { enableHighAccuracy:true, timeout:25000, maximumAge:0 });
+};
+$('sAdd').onclick = async () => {
+  busy(true);
+  try{
+    const r = await api('addSite', { client:$('sClient').value, site:$('sSite').value, address:$('sAddr').value,
+      lat:$('sLat').value, lng:$('sLng').value, radius:$('sRad').value });
+    S.sites = r.sites; renderSites(); renderPunch();
+    ['sClient','sSite','sAddr','sLat','sLng'].forEach(id => $(id).value = '');
+    flash('✔ ' + r.message, 's');
+  }catch(e){ handleErr(e); }
+  finally{ busy(false); }
+};
+
+/* ---------------- START ---------------- */
+(async function init(){
+  const code = load('att_code'); if (code) $('empCode').value = code;
+  S.token = load('att_token') || '';
+  if (!S.token) return;
+  busy(true);
+  try{ startSession(await api('me')); }
+  catch(e){ flash(e.authError ? e.message : e.message); }
+  finally{ busy(false); }
+})();
+</script>
+</body>
+</html>
