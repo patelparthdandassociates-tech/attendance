@@ -71,6 +71,10 @@
   .kpi{background:#f6f8fb;border-radius:10px;padding:10px;text-align:center}
   .kpi b{display:block;font-size:22px;color:var(--navy)} .kpi span{font-size:12px;color:var(--muted)}
   .kpi.alert b{color:var(--red)}
+  .subbox{margin-top:10px;padding:10px;border:1px dashed #b8c4d6;border-radius:10px;background:#f9fbfd}
+  .warnbox{border:1px solid #e0a800;background:#fff8e1}
+  .warnbox .btn{margin:6px 6px 0 0}
+  .sitecard{border:1px solid #e3e8ef;border-radius:10px;padding:10px;margin-bottom:10px}
   #policyView .ptext{white-space:pre-line;font-size:14px;line-height:1.55;background:#f6f8fb;border-radius:10px;padding:12px;max-height:55vh;overflow:auto}
   /* ---------- printable reports ---------- */
   #printArea{background:#fff;color:#000;font-size:12px;font-family:'Bookman Old Style','Bookman','URW Bookman','BookmanWeb',Georgia,serif}
@@ -136,6 +140,34 @@
     </div>
     <br><button class="btn" id="loginBtn">Login</button>
     <p class="muted" style="margin-top:14px">Trouble logging in? <button class="linkbtn" id="testBtn">Test connection</button></p>
+    <p style="margin-top:6px">New employee? <button class="linkbtn" id="regOpen"><b>Register here</b></button></p>
+  </section>
+
+  <!-- ================= SELF-REGISTRATION ================= -->
+  <section id="regView" class="card hidden">
+    <h2>New employee registration</h2>
+    <p class="muted">Fill in your details and choose a password. The partner will check and approve your registration, after which you can log in.</p>
+    <label>Full name (as per PAN / Aadhaar)</label><input id="rgName" autocomplete="name" placeholder="e.g. Karan Mehta">
+    <div class="row">
+      <div><label>Mobile</label><input id="rgMobile" inputmode="tel" autocomplete="tel" placeholder="10-digit mobile"></div>
+      <div><label>Email</label><input id="rgEmail" type="email" autocomplete="email" placeholder="name@example.com"></div>
+    </div>
+    <label>Category</label>
+    <select id="rgCat"><option>Staff</option><option>Articled Assistant</option><option>Other</option></select>
+    <div class="row hidden" id="rgArtBox">
+      <div><label>Articleship start date</label><input type="date" id="rgArtStart"></div>
+      <div><label>Scheme</label><select id="rgScheme"><option value="New">New Scheme (2 years)</option><option value="Old">Old Scheme (3 years)</option></select></div>
+    </div>
+    <label>Choose a password (min 8, letters + numbers)</label>
+    <div class="row">
+      <input id="rgPw" type="password" autocomplete="new-password">
+      <button type="button" class="btn ghost sm" id="rgShowPw" style="flex:0 0 auto">Show</button>
+    </div>
+    <label>Firm joining code (ask the office)</label><input id="rgCode" autocapitalize="characters" placeholder="e.g. RSS4K7PQ">
+    <br><br>
+    <button class="btn" id="rgSend">Send registration</button>
+    <button class="btn ghost" id="rgBack" style="margin-top:8px">← Back to login</button>
+    <div id="rgDone" class="hidden subbox" style="margin-top:12px"></div>
   </section>
 
   <!-- ================= POLICY ================= -->
@@ -165,6 +197,22 @@
         <h2>1. Client site</h2>
         <select id="siteSelect"></select>
         <div id="siteFixed" class="hidden"></div>
+        <div id="newSiteBox" class="hidden subbox">
+          <div class="muted">New client / location. Your <b>current GPS location</b> will be saved as the site. You can check in now – a partner will approve it later.</div>
+          <label>Client name</label><input id="nsClient" list="clientNames" placeholder="e.g. ABC Industries Ltd (pick if already a client)">
+          <datalist id="clientNames"></datalist>
+          <label>Location / branch</label><input id="nsSite" placeholder="e.g. Head office – Andheri / Plant – Silvassa / Godown – Bhiwandi">
+          <label>Type of place</label><select id="nsType"></select>
+          <label>Area / address (optional)</label><input id="nsAddr" placeholder="e.g. MIDC, Andheri East">
+          <label>Contact person (optional)</label><input id="nsContact" placeholder="e.g. Mr Shah, Accounts">
+        </div>
+        <div id="visitBox" class="hidden subbox">
+          <div class="muted">For a visit that is not a client site – GST / Income Tax office, ROC, bank, court, vendor. It is recorded with GPS and selfie but not added to the client list.</div>
+          <label>Purpose</label><select id="vPurpose"></select>
+          <label>Place</label><input id="vPlace" placeholder="e.g. GST Bhavan, Mazgaon / HDFC Bank, Fort branch">
+          <label>For client (optional)</label><input id="vClient" list="clientNames" placeholder="e.g. ABC Industries Ltd">
+        </div>
+        <div id="dupBox" class="hidden subbox warnbox"></div>
       </div>
 
       <div class="card">
@@ -471,6 +519,15 @@
       </div>
 
       <div id="aStaff" class="hidden">
+        <div class="card" id="regCard">
+          <h2>New registrations to approve</h2>
+          <div id="regList" class="muted">Loading…</div>
+          <div class="subbox" style="margin-top:12px">
+            <div><b>Self-registration:</b> <span id="regState"></span> &nbsp; <b>Joining code:</b> <span id="regCodeShow" style="font-size:18px;letter-spacing:1px"></span></div>
+            <div class="muted">Give this code to new joiners with the app link. Make a new code when someone leaves or the code is shared outside.</div>
+            <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="regNewCode">↻ New joining code</button><button class="btn ghost sm" id="regToggle"></button><button class="btn ghost sm" id="regShare">📋 Copy invite message</button></div>
+          </div>
+        </div>
         <div class="card">
           <h2 id="stTitle">Add staff</h2>
           <div class="row">
@@ -481,6 +538,7 @@
             <div><label>Role</label><select id="stRole"><option>Staff</option><option>Admin</option></select></div>
             <div><label>Mobile</label><input id="stMobile" inputmode="tel"></div>
           </div>
+          <label>Email</label><input id="stEmail" type="email">
           <div class="row">
             <div><label>Category</label><select id="stCat"></select></div>
             <div id="stArtBox1"><label>Articleship start</label><input type="date" id="stArtStart"></div>
@@ -508,6 +566,7 @@
           <p class="muted">Best done while standing at the client's office: tap “Use my current location”. Or paste coordinates from Google Maps (long-press the place → copy the two numbers).</p>
           <label>Client name</label><input id="sClient" placeholder="e.g. ABC Industries Ltd">
           <label>Site / branch</label><input id="sSite" placeholder="e.g. Andheri office / Silvassa plant">
+          <label>Type of place</label><select id="sType"><option>Client office</option><option>Factory / Plant</option><option>Warehouse / Godown</option><option>Branch</option><option>Other</option></select>
           <label>Address (optional)</label><input id="sAddr">
           <div class="row">
             <div><label>Latitude</label><input id="sLat" inputmode="decimal"></div>
@@ -526,7 +585,13 @@
           <p class="muted">Staff can also punch at the office. Stand inside the office and tap the button to set its exact location.</p>
           <button class="btn sm" id="sOffice">📍 Set office location to where I am now</button>
         </div>
-        <div class="card"><h2>Active sites</h2><div class="scroll" id="siteList"></div></div>
+        <div class="card" id="pendSitesCard"><h2>New sites added by staff – to approve</h2><div id="pendSites" class="muted">Loading…</div></div>
+        <div class="card">
+          <div class="row"><h2 style="margin:0">All client sites</h2>
+            <div style="text-align:right"><select id="siteFilter" style="width:auto"><option value="active">Active</option><option value="Pending">Pending approval</option><option value="Rejected">Rejected</option><option value="Merged">Merged</option><option value="off">Deactivated</option><option value="">All</option></select>
+            <button class="btn sm xbtn" id="siteXls">⬇ Excel</button></div></div>
+          <br><div class="scroll" id="siteList"></div>
+        </div>
         <div class="card">
           <h2 id="fTitle">Firms (letterheads)</h2>
           <div class="scroll" id="firmList"></div>
@@ -542,7 +607,7 @@
   </section>
   <div class="foot"><div class="credit">Prepared by <b>CA Parth Patel</b><br>in consultation with <b>CA Rishabh Vora</b> &amp; <b>CA Raman Shah</b></div>
   <div>© RAMAN S SHAH &amp; CO LLP, Chartered Accountants</div>
-  <div id="foot">App v2.4</div></div>
+  <div id="foot">App v2.6</div></div>
 </main>
 
 <div class="spinner hidden" id="spinner">Please wait…</div>
@@ -552,7 +617,7 @@
 /* ========= CONFIG: your Apps Script Web App URL (ends with /exec) ========= */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNxOBL1h0AVLOfF6x1uAMLpDxzfzD3yAmJ57hT1DIrEyKhtz7F-oDQycnq-PXIYwID/exec';
 /* ========================================================================= */
-const APP_VERSION = '2.4';
+const APP_VERSION = '2.6';
 
 const $ = id => document.getElementById(id);
 const DEVICE_ID = (() => {
@@ -616,6 +681,10 @@ function startSession(r){
   S.exp = r.expense || null;
   S.firms = r.firms || []; S.holidays = r.holidays || []; S.leaveTypes = r.leaveTypes || []; S.category = r.category || '';
   S.staffCats = r.staffCats || ['Staff','Articled Assistant','Partner','Other'];
+  S.siteTypes = r.siteTypes || ['Client office','Factory / Plant','Warehouse / Godown','Branch','Other'];
+  S.visitPurposes = r.visitPurposes || []; S.canAddSite = r.canAddSite !== false && !!r.siteTypes;
+  $('nsType').innerHTML = S.siteTypes.map(x => `<option>${esc(x)}</option>`).join('');
+  $('vPurpose').innerHTML = '<option value="">— Select purpose —</option>' + S.visitPurposes.map(x => `<option>${esc(x)}</option>`).join('');
   try { localStorage.setItem('att_session', JSON.stringify(r)); } catch(e) {}
   S.firm = r.firm || { name: $('firmName').textContent, tagline: 'Chartered Accountants', address:'', frn:'', contact:'', lateAfter:'10:15' };
   if (r.firm){ $('firmName').textContent = r.firm.name; $('firmSub').textContent = r.firm.tagline; }
@@ -697,19 +766,23 @@ function renderPunch(){
   }
   const sel = $('siteSelect'), keep = sel.value;
   sel.innerHTML = '<option value="">— Select client site —</option>' +
-    S.sites.map(s => `<option value="${esc(s.id)}">${esc(s.client)} – ${esc(s.site)}</option>`).join('');
-  if (S.sites.some(s => s.id === keep)) sel.value = keep;
+    S.sites.map(s => `<option value="${esc(s.id)}">${esc(s.client)} – ${esc(s.site)}${s.status === 'Pending' ? ' (new – pending approval)' : ''}</option>`).join('') +
+    (S.canAddSite ? '<option value="__NEW">➕ Client / location not in list</option>' : '') +
+    (S.visitPurposes && S.visitPurposes.length ? '<option value="VISIT">🏛 One-time visit (GST / IT office, bank, ROC…)</option>' : '');
+  $('clientNames').innerHTML = [...new Set(S.sites.map(s => s.client))].sort().map(c => `<option value="${esc(c)}">`).join('');
+  if (S.sites.some(s => s.id === keep) || keep === '__NEW' || keep === 'VISIT') sel.value = keep;
   if (isOut()){
     $('siteFixed').innerHTML = `<b>${esc(st.openIn.client)}</b> – ${esc(st.openIn.site)}<div class="muted">Check-out is recorded against the site you checked in at.</div>`;
     show(sel, false); show($('siteFixed'), true);
   } else { show(sel, true); show($('siteFixed'), false); }
+  show($('newSiteBox'), !isOut() && sel.value === '__NEW'); show($('visitBox'), !isOut() && sel.value === 'VISIT');
+  if (isOut() || sel.value !== '__NEW') show($('dupBox'), false);
   show($('workCard'), isOut());
   $('punchBtn').textContent = isOut() ? 'CHECK OUT' : 'CHECK IN';
   $('punchBtn').className = 'btn ' + (isOut() ? 'outb' : 'in');
-  if (!S.sites.length) $('siteSelect').innerHTML = '<option value="">No client sites yet – ask admin to add</option>';
   updateLocInfo();
 }
-$('siteSelect').onchange = updateLocInfo;
+$('siteSelect').onchange = () => { S.forceNew = false; renderPunch(); };
 
 /* ---------------- LOCATION ---------------- */
 function distM(lat1,lng1,lat2,lng2){
@@ -718,7 +791,16 @@ function distM(lat1,lng1,lat2,lng2){
   return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 function selectedSite(){
-  const id = isOut() ? S.status.openIn.siteId : $('siteSelect').value;
+  if (isOut()){
+    const o = S.status.openIn;
+    return S.sites.find(s => s.id === o.siteId) || { id:o.siteId, client:o.client, site:o.site, noFence:true };
+  }
+  const id = $('siteSelect').value;
+  if (id === '__NEW') return { id:'__NEW', client:$('nsClient').value.trim(), site:$('nsSite').value.trim() || 'Main', noFence:true, isNew:true };
+  if (id === 'VISIT'){
+    const pur = $('vPurpose').value, place = $('vPlace').value.trim();
+    return { id:'VISIT', client:$('vClient').value.trim() || 'One-time visit', site:(pur || 'Visit') + (place ? ' – ' + place : ''), noFence:true, isVisit:true };
+  }
   return S.sites.find(s => s.id === id);
 }
 function getLocation(){
@@ -748,7 +830,10 @@ function updateLocInfo(){
   let html = `Lat ${S.pos.lat.toFixed(6)}, Long ${S.pos.lng.toFixed(6)} · accuracy ±${Math.round(S.pos.acc)} m`;
   if (S.pos.acc > (S.maxAcc||150)) html += ` <span class="pill warn">weak GPS – move near a window</span>`;
   let outside = false;
-  if (s){
+  if (s && s.isNew) html += `<div style="margin-top:8px"><span class="pill ok">New site</span> This location will be saved as the client's site.</div>`;
+  else if (s && s.isVisit) html += `<div style="margin-top:8px"><span class="pill ok">One-time visit</span> Location recorded; no geo-fence check.</div>`;
+  else if (s && s.noFence) html += '';
+  else if (s){
     const d = Math.round(distM(S.pos.lat,S.pos.lng,s.lat,s.lng));
     outside = d > s.radius + Math.min(S.pos.acc, 50);
     html += `<div style="margin-top:8px">${outside
@@ -805,14 +890,30 @@ $('punchBtn').onclick = async () => {
   const type = isOut() ? 'OUT' : 'IN';
   const s = selectedSite();
   if (!s) return flash('Please select the client site.');
+  if (type === 'IN' && s.isNew){
+    if ($('nsClient').value.trim().length < 2) return flash('Enter the client name for the new site.');
+    if (!$('nsSite').value.trim()) return flash('Enter the location / branch (e.g. Head office – Andheri).');
+  }
+  if (type === 'IN' && s.isVisit){
+    if (!$('vPurpose').value) return flash('Select the purpose of the visit.');
+    if (!$('vPlace').value.trim()) return flash('Enter the place you are visiting.');
+  }
   if (!S.pos) return flash('Location not available yet. Tap “Refresh location”.');
+  if (type === 'IN' && s.isNew && S.pos.acc > (S.maxAcc || 150)) return flash(`GPS is weak (±${Math.round(S.pos.acc)} m). A new site needs an accurate location – step outside or near a window and tap “Refresh location”.`);
   if (!S.selfie) return flash('Please take a selfie.');
   if (type === 'OUT' && !$('workDone').value.trim()) return flash('Please enter the work done before checking out.');
   const payload = {
       type, siteId: s.id, lat: S.pos.lat, lng: S.pos.lng, accuracy: S.pos.acc, selfie: S.selfie,
       remarks: $('remarks').value, workArea: $('workArea').value, workDone: $('workDone').value,
-      wpRef: $('wpRef').value, pending: $('pending').value, deviceTime: Date.now(), device: navigator.userAgent
+      wpRef: $('wpRef').value, pending: $('pending').value, deviceTime: Date.now(), device: navigator.userAgent,
+      _client: s.client, _site: s.site
   };
+  if (type === 'IN' && s.isNew){
+    payload.siteId = ''; payload.forceNew = !!S.forceNew;
+    payload.newSite = { client:$('nsClient').value.trim(), site:$('nsSite').value.trim(), type:$('nsType').value,
+                        address:$('nsAddr').value.trim(), contact:$('nsContact').value.trim() };
+  }
+  if (type === 'IN' && s.isVisit) payload.visit = { purpose:$('vPurpose').value, place:$('vPlace').value.trim(), forClient:$('vClient').value.trim() };
   if (S.outside && !$('remarks').value.trim()) return flash('You are outside the site. Please enter a remark explaining why.');
   if (S.outside && S.strict) return flash('Your firm blocks punches outside the client site.');
   if (queueGet().length){ queueAdd(payload, s, type); syncQueue(); return; }   // keep order with earlier offline punches
@@ -821,6 +922,12 @@ $('punchBtn').onclick = async () => {
     let r;
     try { r = await api('punch', payload); }
     catch(e){ if (/^\[Error C\]/.test(e.message)){ busy(false); queueAdd(payload, s, type); return; } throw e; }
+    if (r.needConfirm){ showDup(r.matches); return; }
+    if (r.sites) S.sites = r.sites;
+    if (type === 'IN' && (s.isNew || s.isVisit)){
+      ['nsClient','nsSite','nsAddr','nsContact','vPlace','vClient'].forEach(id => $(id).value = ''); $('vPurpose').value = '';
+      $('siteSelect').value = ''; S.forceNew = false;
+    }
     S.status = r.status; S.selfie = '';
     ['remarks','workDone','wpRef','pending'].forEach(id => $(id).value = '');
     show($('selfiePreview'), false); show($('camBtn'), true); show($('retakeBtn'), false);
@@ -829,6 +936,20 @@ $('punchBtn').onclick = async () => {
   }catch(e){ handleErr(e); }
   finally{ busy(false); }
 };
+
+function showDup(matches){
+  const b = $('dupBox');
+  b.innerHTML = `<b>Did you mean one of these?</b><div class="muted">A client site already exists close to where you are. Using it avoids duplicate clients.</div>` +
+    matches.map(m => `<div style="margin-top:8px"><b>${esc(m.client)}</b> – ${esc(m.site)} <span class="muted">(${m.dist} m away${m.status === 'Pending' ? ', pending approval' : ''})</span><br>
+      <button class="btn sm" data-use="${esc(m.id)}">Use this site</button></div>`).join('') +
+    `<div style="margin-top:10px"><button class="btn ghost sm" id="dupNew">No – this is a different place, add it as new</button></div>`;
+  show(b, true); b.scrollIntoView({ behavior:'smooth', block:'center' });
+  b.querySelectorAll('[data-use]').forEach(x => x.onclick = () => {
+    $('siteSelect').value = x.dataset.use; S.forceNew = false; renderPunch();
+    flash('Site selected. Tap CHECK IN again (your selfie is kept).', 'i');
+  });
+  $('dupNew').onclick = () => { S.forceNew = true; show(b, false); $('punchBtn').click(); };
+}
 
 /* ---------------- MY ACCOUNT ---------------- */
 async function loadHistory(){
@@ -907,8 +1028,59 @@ $('rCsv').onclick = () => {
 
 /* ---------------- ADMIN: STAFF ---------------- */
 async function loadStaff(){
-  try{ const r = await api('listStaff'); S.staff = r.staff; S.policyVersion = r.policyVersion; renderStaff(); }catch(e){ handleErr(e); }
+  try{ const r = await api('listStaff'); takeStaff(r); }catch(e){ handleErr(e); }
 }
+function takeStaff(r){
+  S.allStaff = r.staff; S.staff = r.staff.filter(s => !s.reg || s.reg === 'Approved'); S.policyVersion = r.policyVersion;
+  if (r.regCode !== undefined){ S.regCode = r.regCode; S.selfReg = r.selfReg; }
+  renderStaff(); renderRegs();
+}
+function renderRegs(){
+  if (S.regCode === undefined){ show($('regCard'), false); return; }
+  show($('regCard'), true);
+  $('regState').innerHTML = S.selfReg ? '<span class="pill ok">ON</span>' : '<span class="pill bad">OFF</span>';
+  $('regCodeShow').textContent = S.regCode || '—';
+  $('regToggle').textContent = S.selfReg ? 'Turn OFF' : 'Turn ON';
+  const pend = (S.allStaff || []).filter(s => s.reg === 'Pending');
+  const cats = (S.staffCats || ['Staff','Articled Assistant','Partner','Other']).filter(c => c !== 'Partner');
+  $('regList').innerHTML = pend.length ? pend.map(s => `<div class="sitecard" data-code="${esc(s.empCode)}">
+      <div><b>${esc(s.name)}</b> · registered ${esc(s.regOn)}</div>
+      <div class="muted">📱 ${esc(s.mobile)} · ✉ ${esc(s.email)}</div>
+      <div class="row"><div><label>Employee ID</label><input class="rgId" value="${esc(s.empCode)}" autocapitalize="characters"></div>
+        <div><label>Name</label><input class="rgNm" value="${esc(s.name)}"></div></div>
+      <div class="row"><div><label>Category</label><select class="rgCt">${cats.map(c => `<option${c === s.category ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
+        <div class="rgArt${s.category === 'Articled Assistant' ? '' : ' hidden'}"><label>Articleship start</label><input type="date" class="rgSt" value="${esc(s.artStartIso || '')}"></div></div>
+      <div class="row rgArt${s.category === 'Articled Assistant' ? '' : ' hidden'}"><div><label>Scheme</label><select class="rgSc"><option value="New"${s.artScheme === 'Old' ? '' : ' selected'}>New Scheme</option><option value="Old"${s.artScheme === 'Old' ? ' selected' : ''}>Old Scheme</option></select></div>
+        <div><label>Monthly stipend (₹)</label><input type="number" class="rgSp" inputmode="numeric"></div></div>
+      <label>Remark (needed to reject)</label><input class="rgRm" placeholder="e.g. Not an employee of the firm">
+      <div class="row" style="margin-top:8px"><button class="btn sm in" data-act="approve">✔ Approve</button><button class="btn ghost sm" data-act="reject" style="color:var(--red)">✖ Reject</button></div>
+    </div>`).join('') : '<div class="muted">No registrations waiting.</div>';
+  $('regList').querySelectorAll('.sitecard').forEach(card => {
+    const q = c => card.querySelector(c);
+    q('.rgCt').onchange = () => card.querySelectorAll('.rgArt').forEach(x => show(x, q('.rgCt').value === 'Articled Assistant'));
+    card.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
+      const act = b.dataset.act, body = { empCode:card.dataset.code, decision:act, remark:q('.rgRm').value };
+      if (act === 'reject' && !body.remark.trim()) return flash('Enter the reason for rejecting.');
+      if (act === 'approve') Object.assign(body, { newCode:q('.rgId').value, name:q('.rgNm').value, category:q('.rgCt').value,
+                                                   artStart:q('.rgSt').value, artScheme:q('.rgSc').value, stipend:q('.rgSp').value });
+      busy(true);
+      try{ const r = await api('reviewRegistration', body); takeStaff(r); flash('✔ ' + r.message, 's'); }
+      catch(e){ handleErr(e); } finally{ busy(false); }
+    });
+  });
+}
+async function regSetting(data){
+  busy(true);
+  try{ const r = await api('setRegCode', data); takeStaff(r); flash('✔ ' + r.message, 's'); }
+  catch(e){ handleErr(e); } finally{ busy(false); }
+}
+$('regNewCode').onclick = () => regSetting({ newCode:true });
+$('regToggle').onclick = () => regSetting({ enabled:!S.selfReg });
+$('regShare').onclick = async () => {
+  const txt = `Welcome to ${S.firm && S.firm.name || 'the firm'}!\nPlease register on our staff attendance app:\n1. Open ${location.href.split('#')[0]}\n2. Tap "New employee? Register here"\n3. Fill in your details. Firm joining code: ${S.regCode}\nYou can log in once a partner approves your registration.`;
+  try{ await navigator.clipboard.writeText(txt); flash('✔ Invite message copied. Paste it in WhatsApp or email.', 's'); }
+  catch(e){ flash(txt, 'i'); }
+};
 function renderStaff(){
   $('staffList').innerHTML = S.staff.length ? '<table><tr><th>ID</th><th>Name</th><th>Role / Category</th><th>Phone</th><th>Mobile</th><th>Status</th><th>Policy</th><th></th></tr>' +
     S.staff.map((s,i) => `<tr><td>${esc(s.empCode)}</td><td>${esc(s.name)}</td><td>${esc(s.role)}<div class="muted">${esc(s.category || '')}</div></td>
@@ -929,7 +1101,7 @@ function editStaff(s){
   $('stTitle').textContent = s ? `Edit ${s.empCode}` : 'Add staff';
   $('stCode').value = s ? s.empCode : ''; $('stCode').disabled = !!s;
   $('stName').value = s ? s.name : ''; $('stRole').value = s ? s.role : 'Staff';
-  $('stMobile').value = s ? s.mobile : ''; $('stActive').checked = s ? s.active : true; $('stPw').value = '';
+  $('stMobile').value = s ? s.mobile : ''; $('stEmail').value = s ? (s.email || '') : ''; $('stActive').checked = s ? s.active : true; $('stPw').value = '';
   $('stPwLabel').textContent = s ? 'New password (leave blank to keep current)' : 'Password (min 6 characters)';
   show($('stCancel'), !!s);
   window.scrollTo({top:0,behavior:'smooth'});
@@ -940,26 +1112,91 @@ $('stSave').onclick = async () => {
   busy(true);
   try{
     const r = await api('saveStaff', { empCode:$('stCode').value, name:$('stName').value, role:$('stRole').value,
-      mobile:$('stMobile').value, password:$('stPw').value, active:$('stActive').checked, category:$('stCat').value,
+      mobile:$('stMobile').value, email:$('stEmail').value, password:$('stPw').value, active:$('stActive').checked, category:$('stCat').value,
       artStart:$('stArtStart').value, artScheme:$('stScheme').value, stipend:$('stStipend').value, resetDevice:$('stReset').checked });
-    S.staff = r.staff; renderStaff(); editStaff(null); flash('✔ ' + r.message, 's');
+    takeStaff(r); editStaff(null); flash('✔ ' + r.message, 's');
   }catch(e){ handleErr(e); }
   finally{ busy(false); }
 };
 
 /* ---------------- ADMIN: SITES ---------------- */
-function renderSites(){
-  $('siteList').innerHTML = S.sites.length ? '<table><tr><th>ID</th><th>Client</th><th>Site</th><th>Radius</th><th>Map</th><th></th></tr>' +
-    S.sites.map(s => `<tr><td>${esc(s.id)}</td><td>${esc(s.client)}${(S.firms || []).length > 1 ? `<div class="muted">${esc(((S.firms || []).find(f => f.code === s.firm) || {}).name || '')}</div>` : ''}</td><td>${esc(s.site)}</td><td>${s.radius} m</td>
-      <td><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${s.lat},${s.lng}">view</a></td>
-      <td><button class="btn ghost sm" data-off="${esc(s.id)}">Deactivate</button></td></tr>`).join('') + '</table>'
-    : '<div class="muted">No sites yet.</div>';
+function renderSites(){ loadSitesAdmin(); }
+async function loadSitesAdmin(){
+  $('siteList').textContent = 'Loading…';
+  try{
+    const r = await api('listSites'); S.allSites = r.all; S.sites = r.sites; renderPunch(); drawSitesAdmin();
+  }catch(e){
+    // older server without listSites: show the active list only
+    S.allSites = S.sites.map(x => Object.assign({ status:'Approved', active:true, visits:'', addedBy:'' }, x)); drawSitesAdmin();
+    if (!/Unknown action/.test(e.message)) handleErr(e);
+  }
+}
+function firmName(code){ return ((S.firms || []).find(f => f.code === code) || {}).name || ''; }
+function drawSitesAdmin(){
+  const all = S.allSites || [], pend = all.filter(x => x.status === 'Pending' && x.active);
+  const approved = all.filter(x => x.active && x.status !== 'Pending' && x.status !== 'Rejected' && x.status !== 'Merged');
+  const firmOpts = (S.firms || []).map(f => `<option value="${esc(f.code)}">${esc(f.name)}</option>`).join('');
+  const typeOpts = (S.siteTypes || []).map(t => `<option>${esc(t)}</option>`).join('');
+  $('pendSites').innerHTML = pend.length ? pend.map(x => {
+    const near = approved.map(a => ({ a, d: Math.round(distM(x.lat, x.lng, a.lat, a.lng)) })).sort((p, q) => p.d - q.d).slice(0, 8);
+    return `<div class="sitecard" data-id="${esc(x.id)}">
+      <div><b>${esc(x.id)}</b> · added by <b>${esc(x.addedBy)}</b> on ${esc(x.addedOn)} · ${x.visits} visit(s)
+        · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${x.lat},${x.lng}">see on map</a></div>
+      ${x.address || x.contact ? `<div class="muted">${esc(x.address)}${x.address && x.contact ? ' · ' : ''}${x.contact ? 'Contact: ' + esc(x.contact) : ''}</div>` : ''}
+      <div class="row"><div><label>Client</label><input class="rvClient" value="${esc(x.client)}"></div><div><label>Location / branch</label><input class="rvSite" value="${esc(x.site)}"></div></div>
+      <div class="row"><div><label>Type</label><select class="rvType">${typeOpts}</select></div><div><label>Radius (m)</label><input class="rvRad" type="number" value="${x.radius}"></div>
+        ${(S.firms || []).length > 1 ? `<div><label>Firm</label><select class="rvFirm">${firmOpts}</select></div>` : ''}</div>
+      <label>Remark (needed to reject or merge)</label><input class="rvRemark" placeholder="e.g. Same as ABC Ltd Andheri / not a client">
+      <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+        <button class="btn sm in" data-act="approve">✔ Approve</button>
+        <select class="rvMerge" style="width:auto;flex:1">${near.length ? near.map(n => `<option value="${esc(n.a.id)}">${esc(n.a.client)} – ${esc(n.a.site)} (${n.d >= 1000 ? (n.d/1000).toFixed(1) + ' km' : n.d + ' m'})</option>`).join('') : '<option value="">No other sites</option>'}</select>
+        <button class="btn ghost sm" data-act="merge">⇄ Merge into</button>
+        <button class="btn ghost sm" data-act="reject" style="color:var(--red)">✖ Reject</button>
+      </div></div>`;
+  }).join('') : '<div class="muted">Nothing to approve. Sites added by staff from the Punch screen will appear here.</div>';
+  $('pendSites').querySelectorAll('.sitecard').forEach(card => {
+    const x = all.find(y => y.id === card.dataset.id);
+    card.querySelector('.rvType').value = x.type || 'Client office';
+    if (card.querySelector('.rvFirm')) card.querySelector('.rvFirm').value = x.firm || 'F1';
+    card.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
+      const q = c => card.querySelector(c), act = b.dataset.act;
+      const body = { siteId:x.id, decision:act, remark:q('.rvRemark').value };
+      if (act === 'approve') Object.assign(body, { client:q('.rvClient').value, site:q('.rvSite').value, type:q('.rvType').value, radius:q('.rvRad').value }, q('.rvFirm') ? { firm:q('.rvFirm').value } : {});
+      if (act === 'merge') body.mergeInto = q('.rvMerge').value;
+      if (act !== 'approve' && !body.remark.trim()) return flash('Enter a remark to ' + act + ' this site.');
+      busy(true);
+      try{ const r = await api('reviewSite', body); S.allSites = r.all; S.sites = r.sites; drawSitesAdmin(); renderPunch(); flash('✔ ' + r.message, 's'); }
+      catch(e){ handleErr(e); } finally{ busy(false); }
+    });
+  });
+  const f = $('siteFilter').value;
+  const list = all.filter(x => f === 'active' ? (x.active && x.status !== 'Rejected' && x.status !== 'Merged') : f === 'off' ? (!x.active && x.status !== 'Rejected' && x.status !== 'Merged') : !f || x.status === f)
+                  .sort((a, b) => a.client.localeCompare(b.client) || a.site.localeCompare(b.site));
+  const pill = x => x.status === 'Pending' ? '<span class="pill warn">pending</span>' : x.status === 'Rejected' ? '<span class="pill bad">rejected</span>' :
+                    x.status === 'Merged' ? `<span class="pill">merged → ${esc(x.mergedInto)}</span>` : !x.active ? '<span class="pill">off</span>' : '<span class="pill ok">approved</span>';
+  let lastClient = '';
+  $('siteList').innerHTML = list.length ? '<table><tr><th>ID</th><th>Client</th><th>Location</th><th>Type</th><th>Radius</th><th>Status</th><th>Visits</th><th>Map</th><th></th></tr>' +
+    list.map(x => { const same = x.client === lastClient; lastClient = x.client;
+      return `<tr><td>${esc(x.id)}</td><td>${same ? '<span class="muted">〃</span>' : `<b>${esc(x.client)}</b>`}${(S.firms || []).length > 1 && !same ? `<div class="muted">${esc(firmName(x.firm))}</div>` : ''}</td>
+      <td>${esc(x.site)}${x.addedBy ? `<div class="muted">by ${esc(x.addedBy)}</div>` : ''}</td><td>${esc(x.type || '')}</td><td>${x.radius} m</td><td>${pill(x)}${x.remark ? `<div class="muted">${esc(x.remark)}</div>` : ''}</td>
+      <td>${x.visits}${x.lastVisit ? `<div class="muted">last ${esc(x.lastVisit)}</div>` : ''}</td>
+      <td><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${x.lat},${x.lng}">view</a></td>
+      <td>${x.active && x.status !== 'Rejected' && x.status !== 'Merged' && x.id !== 'OFFICE' ? `<button class="btn ghost sm" data-off="${esc(x.id)}">Deactivate</button>` : ''}</td></tr>`; }).join('') + '</table>'
+    : '<div class="muted">No sites in this list.</div>';
   $('siteList').querySelectorAll('[data-off]').forEach(b => b.onclick = async () => {
     busy(true);
-    try{ const r = await api('updateSite', { siteId:b.dataset.off, active:false }); S.sites = r.sites; renderSites(); renderPunch(); flash('✔ ' + r.message, 's'); }
+    try{ await api('updateSite', { siteId:b.dataset.off, active:false }); flash('✔ Site deactivated.', 's'); loadSitesAdmin(); }
     catch(e){ handleErr(e); } finally{ busy(false); }
   });
 }
+$('siteFilter').onchange = drawSitesAdmin;
+$('siteXls').onclick = () => {
+  const all = S.allSites || [];
+  xlsxDownload('Client_sites_' + todayISO() + '.xlsx', [{ name:'Sites', title:'CLIENT SITES', meta:['As on ' + new Date().toLocaleDateString('en-IN')],
+    widths:[9,28,28,18,26,18,11,11,9,11,7,24,16,24,16,10,26,7,11],
+    header:['Site ID','Client','Location / branch','Type','Address','Contact','Latitude','Longitude','Radius (m)','Status','Active','Added by','Added on','Reviewed by','Reviewed on','Merged into','Remark','Visits','Last visit'],
+    rows: all.map(x => [x.id, x.client, x.site, x.type, x.address, x.contact, x.lat, x.lng, x.radius, x.status, x.active ? 'Yes' : 'No', x.addedBy, x.addedOn, x.reviewedBy, x.reviewedOn, x.mergedInto, x.remark, x.visits, x.lastVisit]) }]);
+};
 $('sHere').onclick = () => {
   if (!navigator.geolocation) return flash('Location not supported on this browser.');
   navigator.geolocation.getCurrentPosition(p => {
@@ -970,7 +1207,7 @@ $('sHere').onclick = () => {
 $('sAdd').onclick = async () => {
   busy(true);
   try{
-    const r = await api('addSite', { client:$('sClient').value, site:$('sSite').value, address:$('sAddr').value,
+    const r = await api('addSite', { client:$('sClient').value, site:$('sSite').value, address:$('sAddr').value, type:$('sType').value,
       lat:$('sLat').value, lng:$('sLng').value, radius:$('sRad').value, firm:$('sFirm').value });
     S.sites = r.sites; renderSites(); renderPunch();
     ['sClient','sSite','sAddr','sLat','sLng'].forEach(id => $(id).value = '');
@@ -1147,7 +1384,7 @@ async function loadDash(){
     const r = await api('dashboard'), c = r.counts; S.dash = r;
     $('dWhen').textContent = `${r.date} · ${r.time}`;
     const k = (n, t, alert) => `<div class="kpi${alert && n ? ' alert' : ''}"><b>${esc(n)}</b><span>${esc(t)}</span></div>`;
-    $('dKpis').innerHTML = k(c.present + ' / ' + c.staff, 'Punched today') + k(c.atClient, 'At client now') + k(c.notPunched, 'Not punched', true) + k(c.onLeave || 0, 'On leave') + k(c.pendingLeave || 0, 'Leave to approve', true) +
+    $('dKpis').innerHTML = k(c.present + ' / ' + c.staff, 'Punched today') + k(c.atClient, 'At client now') + k(c.notPunched, 'Not punched', true) + k(c.onLeave || 0, 'On leave') + k(c.pendingLeave || 0, 'Leave to approve', true) + k(c.pendingSites || 0, 'New sites to approve', true) + k(c.pendingReg || 0, 'New staff to approve', true) +
       k(c.late, `Late (after ${r.lateAfter})`, true) + k(c.flagged, 'Flagged today', true) + k(c.policyPending, 'Policy pending', true) +
       k(c.pendingExp, 'Expenses to approve', true) + k(money(c.pendingAmt), 'Pending amount') + k(money(c.toPayAmt), `To pay (${c.toPay})`);
     const order = { 'At client': 0, 'Checked out': 1, 'On leave': 2, 'Holiday': 3, 'Not punched': 4 };
@@ -1196,9 +1433,9 @@ $('pType').onchange = pTypeChanged;
 async function loadClients(){
   try{
     const r = await api('listExpenses', { from:$('pFrom').value, to:$('pTo').value });
-    const names = [...new Set(r.items.filter(i => i.status === 'Approved' || i.status === 'Paid').map(i => i.client))].sort();
+    const names = [...new Set(r.items.filter(i => i.status === 'Approved' || i.status === 'Paid').map(i => i.baseClient || i.client))].sort();
     $('pClient').innerHTML = names.length ? names.map(n => `<option>${esc(n)}</option>`).join('') : '<option value="">No approved expenses in this period</option>';
-    S.clientFirm = {}; r.items.forEach(i => { const st = S.sites.find(x => x.id === i.siteId); if (st) S.clientFirm[i.client] = st.firm; });
+    S.clientFirm = {}; r.items.forEach(i => { const st = S.sites.find(x => x.id === i.siteId); if (st) S.clientFirm[i.baseClient || i.client] = st.firm; });
     $('pClient').onchange = () => { const f = S.clientFirm[$('pClient').value]; if (f) $('pFirm').value = f; }; $('pClient').onchange();
   }catch(e){ handleErr(e); }
 }
@@ -1256,7 +1493,7 @@ $('pMake').onclick = async () => {
       const client = $('pClient').value;
       if (!client) throw new Error('No client with approved expenses in this period.');
       const r = await api('listExpenses', { from:$('pFrom').value, to:$('pTo').value });
-      html = buildClientStatement(client, r.items.filter(i => i.client === client && (i.status === 'Approved' || i.status === 'Paid')));
+      html = buildClientStatement(client, r.items.filter(i => (i.baseClient || i.client) === client && (i.status === 'Approved' || i.status === 'Paid')));
     }
     if (t === 'artReg'){ html = buildArtReg(await api('articleRegister', { month:$('pMonth').value })); }
     if (t === 'leaveReg'){
@@ -1356,10 +1593,11 @@ function buildVoucher(m, items){
 }
 function buildClientStatement(client, items){
   items.sort((a, b) => a.iso < b.iso ? -1 : 1);
+  const multiLoc = new Set(items.map(i => i.location || '')).size > 1;
   const total = items.reduce((t, i) => t + i.amount, 0);
   const from = new Date($('pFrom').value).toLocaleDateString('en-IN'), to = new Date($('pTo').value).toLocaleDateString('en-IN');
   const rows = items.map((i, n) => `<tr><td>${n+1}</td><td>${esc(i.date)}</td><td>${esc(i.category)}${i.km ? `<br><small>${esc(i.km)} km</small>` : ''}</td>
-      <td>${esc(i.description)}</td><td>${esc(i.name)}</td><td class="num">${amt(i.amount)}</td></tr>`).join('');
+      <td>${esc(i.description)}${i.location && multiLoc ? `<br><small>Location: ${esc(i.location)}</small>` : ''}</td><td>${esc(i.name)}</td><td class="num">${amt(i.amount)}</td></tr>`).join('');
   return letterhead('STATEMENT OF OUT-OF-POCKET EXPENSES', `<b>To:</b> ${esc(client)}`, `<b>Period:</b> ${esc(from)} to ${esc(to)}<br><b>Date:</b> ${esc(new Date().toLocaleDateString('en-IN'))}`) +
     `<p>Out-of-pocket expenses incurred on your behalf during the above period in connection with our professional engagement:</p>
      <table><tr><th>#</th><th>Date</th><th>Nature of expense</th><th>Particulars</th><th>Incurred by</th><th>Amount (₹)</th></tr>${rows}
@@ -1505,9 +1743,9 @@ $('dXls').onclick = () => {
 $('stXls').onclick = () => {
   if (!S.staff) return;
   xlsxDownload('Staff_list.xlsx', [{ name: 'Staff', title: 'STAFF LIST', meta: [],
-    header: ['Emp Code','Name','Role','Category','Mobile','Status','Phone','Articleship start','Scheme','Stipend (₹)','Policy version accepted','Policy accepted on'],
-    rows: S.staff.map(s => [s.empCode, s.name, s.role, s.category, s.mobile, s.active ? 'Active' : 'Inactive', s.role === 'Admin' ? 'any' : (s.phoneLinked ? 'linked' : 'not yet'), s.artStart, s.artScheme, s.stipend === '' ? '' : Number(s.stipend), s.policyVersion, s.policyOn]),
-    widths: [10,24,8,18,14,9,9,12,8,10,10,18] }]);
+    header: ['Emp Code','Name','Role','Category','Mobile','Email','Status','Phone','Articleship start','Scheme','Stipend (₹)','Policy version accepted','Policy accepted on'],
+    rows: S.staff.map(s => [s.empCode, s.name, s.role, s.category, s.mobile, s.email || '', s.active ? 'Active' : 'Inactive', s.role === 'Admin' ? 'any' : (s.phoneLinked ? 'linked' : 'not yet'), s.artStart, s.artScheme, s.stipend === '' ? '' : Number(s.stipend), s.policyVersion, s.policyOn]),
+    widths: [10,24,8,18,14,24,9,9,12,8,10,10,18] }]);
 };
 $('eXls').onclick = () => {
   if (!S.myExp) return flash('No expenses loaded.');
@@ -1618,7 +1856,8 @@ $('xeSave').onclick = async () => {
 function queueGet(){ try { return JSON.parse(localStorage.getItem('att_queue') || '[]'); } catch(e) { return []; } }
 function queueSet(q){ try { localStorage.setItem('att_queue', JSON.stringify(q)); } catch(e) { flash('Could not save the punch on this phone (storage full).'); } renderQueue(); }
 function queueAdd(payload, site, type){
-  const q = queueGet(); q.push(Object.assign({}, payload, { offline: true, empCode: S.user.empCode })); queueSet(q);
+  const q = queueGet(); q.push(Object.assign({}, payload, { offline: true, empCode: S.user.empCode }, payload.newSite ? { forceNew: true } : {})); queueSet(q);
+  if (type === 'IN' && (site.isNew || site.isVisit)){ ['nsClient','nsSite','nsAddr','nsContact','vPlace','vClient'].forEach(id => $(id).value = ''); $('vPurpose').value = ''; $('siteSelect').value = ''; }
   const t = new Date(payload.deviceTime), hm = t.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
   // show the expected status until the server confirms
   if (type === 'IN') S.status = { last: null, openIn: { client: site.client, site: site.site, siteId: site.id, time: hm, date: t.toLocaleDateString('en-GB').replace(/\//g,'-'), within: S.outside ? 'No' : 'Yes' } };
@@ -1645,7 +1884,7 @@ async function syncQueue(){
       if (item.empCode !== S.user.empCode){ q.shift(); continue; }
       try{
         const r = await api('punch', item);
-        q.shift(); queueSet(q); S.status = r.status; renderPunch();
+        q.shift(); queueSet(q); S.status = r.status; if (r.sites) S.sites = r.sites; renderPunch();
         flash('✔ Offline punch sent: ' + r.message, 's');
       }catch(e){
         if (/^\[Error C\]/.test(e.message)) break;          // still offline – try later
@@ -1833,6 +2072,31 @@ function buildLeaveReg(items, from, to){
     sigBlock() + genLine(true);
 }
 
+/* ---------------- SELF-REGISTRATION ---------------- */
+$('regOpen').onclick = () => { show($('loginView'), false); show($('regView'), true); show($('rgDone'), false); window.scrollTo({ top:0 }); };
+$('rgBack').onclick = () => { show($('regView'), false); show($('loginView'), true); };
+$('rgCat').onchange = () => show($('rgArtBox'), $('rgCat').value === 'Articled Assistant');
+$('rgShowPw').onclick = () => { const p = $('rgPw'); p.type = p.type === 'password' ? 'text' : 'password'; $('rgShowPw').textContent = p.type === 'password' ? 'Show' : 'Hide'; };
+$('rgSend').onclick = async () => {
+  const v = id => $(id).value.trim();
+  if (v('rgName').length < 3) return flash('Enter your full name.');
+  if (!/^(\+?91)?[6-9]\d{9}$/.test(v('rgMobile').replace(/[\s-]/g, ''))) return flash('Enter a valid 10-digit mobile number.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('rgEmail'))) return flash('Enter a valid email address.');
+  if ($('rgCat').value === 'Articled Assistant' && !v('rgArtStart')) return flash('Enter your articleship start date.');
+  if (v('rgPw').length < 8 || !/[a-z]/i.test(v('rgPw')) || !/\d/.test(v('rgPw'))) return flash('Password must be at least 8 characters with letters and numbers.');
+  if (!v('rgCode')) return flash('Enter the firm joining code (ask the office).');
+  busy(true);
+  try{
+    const r = await api('register', { name:v('rgName'), mobile:v('rgMobile'), email:v('rgEmail'), category:$('rgCat').value,
+      artStart:v('rgArtStart'), artScheme:$('rgScheme').value, password:v('rgPw'), joinCode:v('rgCode') });
+    $('rgDone').innerHTML = `✔ <b>Registration sent.</b><br>Your Employee ID: <b style="font-size:20px">${esc(r.empCode)}</b><br>
+      Note it down. You can log in with this ID and your password after the partner approves (the partner may change the ID – you will be told).`;
+    show($('rgDone'), true); $('rgPw').value = ''; $('empCode').value = r.empCode;
+    flash('✔ ' + r.message, 's');
+  }catch(e){ handleErr(e); }
+  finally{ busy(false); }
+};
+
 /* ---------------- START ---------------- */
 (async function init(){
   const code = load('att_code'); if (code) $('empCode').value = code;
@@ -1846,7 +2110,7 @@ function buildLeaveReg(items, from, to){
       startSession(cached);
       const q = queueGet(), last = q[q.length - 1];
       if (last){ const t = new Date(last.deviceTime), hm = t.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
-        const site = S.sites.find(x => x.id === last.siteId) || {};
+        const site = S.sites.find(x => x.id === last.siteId) || { client:last._client, site:last._site };
         S.status = last.type === 'IN' ? { last:null, openIn:{ client:site.client || '', site:site.site || '', siteId:last.siteId, time:hm, date:t.toLocaleDateString('en-GB').replace(/\//g,'-'), within:'Yes' } } : { last:null, openIn:null };
         renderPunch(); }
       flash('📶 No internet – working offline. Punches will be saved on this phone and sent later.', 'i');
