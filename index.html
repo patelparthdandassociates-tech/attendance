@@ -49,6 +49,10 @@
   a{color:var(--blue)}
   .linkbtn{background:none;border:0;color:var(--blue);padding:0;font-size:13px;text-decoration:underline}
   .spinner{position:fixed;inset:0;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;z-index:20;font-weight:600;color:var(--navy)}
+  .tot{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+  .tot span{background:#f6f8fb;border-radius:8px;padding:6px 9px;font-size:12.5px}
+  .tot b{color:var(--navy)}
+  #xDetail table{min-width:1050px}
   .foot{text-align:center;font-size:11px;color:var(--muted);margin:16px 0}
 </style>
 </head>
@@ -80,7 +84,8 @@
   <section id="appView" class="hidden">
     <div class="tabs">
       <button data-tab="punchTab" class="active">Punch</button>
-      <button data-tab="accTab">My Account</button>
+      <button data-tab="expTab">Expenses</button>
+      <button data-tab="accTab">Account</button>
       <button data-tab="adminTab" class="hidden" id="adminTabBtn">Admin</button>
     </div>
 
@@ -141,6 +146,45 @@
       </div>
     </div>
 
+    <!-- ---------- EXPENSES ---------- -->
+    <div id="expTab" class="hidden">
+      <div class="card">
+        <h2>Add expense</h2>
+        <div class="row">
+          <div><label>Date</label><input type="date" id="eDate"></div>
+          <div><label>Client</label><select id="eSite"></select></div>
+        </div>
+        <label>Category</label>
+        <select id="eCat"></select>
+        <div id="eKmBox" class="hidden">
+          <label>Kilometres travelled</label>
+          <input id="eKm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="e.g. 18">
+          <div class="muted" id="eKmCalc" style="margin-top:4px"></div>
+        </div>
+        <div id="eAmtBox">
+          <label>Amount (₹)</label>
+          <input id="eAmt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 240">
+        </div>
+        <label>Description (from – to / purpose)</label>
+        <input id="eDesc" placeholder="e.g. Office to ABC Ltd Andheri and back">
+        <label>Bill / receipt <span class="muted" id="eBillNote"></span></label>
+        <div class="row">
+          <button class="btn ghost sm" id="eBillBtn" type="button">📎 Add bill photo / PDF</button>
+          <button class="btn ghost sm hidden" id="eBillClear" type="button">Remove</button>
+        </div>
+        <input type="file" id="eBillFile" accept="image/*,application/pdf" class="hidden">
+        <img id="eBillPrev" class="hidden" style="max-width:200px;border-radius:8px;margin-top:8px" alt="bill">
+        <div class="muted" id="eBillName"></div>
+        <br><button class="btn" id="eSave">Submit expense</button>
+      </div>
+      <div class="card">
+        <h2>My expenses</h2>
+        <div class="row"><div><label>Month</label><input type="month" id="eMonth"></div><div></div></div>
+        <div id="eTotals" class="tot"></div>
+        <div id="eList" class="muted">Loading…</div>
+      </div>
+    </div>
+
     <!-- ---------- MY ACCOUNT ---------- -->
     <div id="accTab" class="hidden">
       <div class="card"><h2>My last 20 punches</h2><div id="histList" class="muted">Loading…</div></div>
@@ -159,6 +203,7 @@
         <button data-sub="aReport" class="active">Report</button>
         <button data-sub="aStaff">Staff</button>
         <button data-sub="aSites">Sites</button>
+        <button data-sub="aExp">Expenses</button>
       </div>
 
       <div id="aReport">
@@ -178,6 +223,37 @@
         </div>
         <div class="card hidden" id="rSummaryCard"><h2>Summary</h2><div class="scroll" id="rSummary"></div></div>
         <div class="card hidden" id="rDetailCard"><h2>Detail (each visit)</h2><div class="scroll" id="rDetail"></div></div>
+      </div>
+
+      <div id="aExp" class="hidden">
+        <div class="card">
+          <h2>Expense claims</h2>
+          <div class="row">
+            <div><label>From</label><input type="date" id="xFrom"></div>
+            <div><label>To</label><input type="date" id="xTo"></div>
+          </div>
+          <div class="row">
+            <div><label>Staff</label><select id="xEmp"><option value="">All staff</option></select></div>
+            <div><label>Status</label><select id="xStatus"><option value="">All</option><option>Pending</option><option>Approved</option><option>Rejected</option><option>Paid</option></select></div>
+          </div>
+          <br>
+          <div class="row">
+            <button class="btn sm" id="xRun">Show</button>
+            <button class="btn ghost sm" id="xCsv">Export CSV</button>
+          </div>
+        </div>
+        <div class="card hidden" id="xSumCard"><h2>Summary</h2><div class="tot" id="xTotals"></div><div class="scroll" id="xSummary"></div></div>
+        <div class="card hidden" id="xDetCard">
+          <h2>Claims</h2>
+          <label style="margin-top:0">Remark (compulsory for Reject)</label>
+          <input id="xRemark" placeholder="e.g. Bill not clear / not client related">
+          <div class="row wrap" style="margin:10px 0">
+            <button class="btn sm in" id="xApprove">✓ Approve selected</button>
+            <button class="btn sm outb" id="xReject">✗ Reject selected</button>
+            <button class="btn sm" id="xPaid">₹ Mark selected Paid</button>
+          </div>
+          <div class="scroll" id="xDetail"></div>
+        </div>
       </div>
 
       <div id="aStaff" class="hidden">
@@ -224,7 +300,7 @@
       </div>
     </div>
   </section>
-  <div class="foot" id="foot">App v2.0</div>
+  <div class="foot" id="foot">App v2.1</div>
 </main>
 
 <div class="spinner hidden" id="spinner">Please wait…</div>
@@ -233,7 +309,7 @@
 /* ========= CONFIG: your Apps Script Web App URL (ends with /exec) ========= */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNxOBL1h0AVLOfF6x1uAMLpDxzfzD3yAmJ57hT1DIrEyKhtz7F-oDQycnq-PXIYwID/exec';
 /* ========================================================================= */
-const APP_VERSION = '2.0';
+const APP_VERSION = '2.1';
 
 const $ = id => document.getElementById(id);
 const S = { token:'', user:null, sites:[], status:null, pos:null, selfie:'', stream:null, report:null, staff:[], editing:null };
@@ -289,6 +365,7 @@ $('testBtn').onclick = async () => {
 /* ---------------- LOGIN / SESSION ---------------- */
 function startSession(r){
   S.user = r.user; S.sites = r.sites; S.status = r.status; S.strict = r.strict; S.maxAcc = r.maxAcc;
+  S.exp = r.expense || null;
   $('firmName').textContent = r.firmName;
   $('userLine').textContent = `${r.user.name} (${r.user.empCode})${r.user.role==='Admin' ? ' · Admin' : ''}`;
   show($('loginView'), false); show($('appView'), true); show($('logoutBtn'), true);
@@ -316,15 +393,17 @@ $('logoutBtn').onclick = () => { store('att_token', null); stopCam(); location.r
 /* ---------------- TABS ---------------- */
 document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button[data-tab]').forEach(x => x.classList.toggle('active', x === b));
-  ['punchTab','accTab','adminTab'].forEach(t => show($(t), t === b.dataset.tab));
+  ['punchTab','expTab','accTab','adminTab'].forEach(t => show($(t), t === b.dataset.tab));
   flash('');
   if (b.dataset.tab === 'accTab') loadHistory();
+  if (b.dataset.tab === 'expTab') initExpenses();
   if (b.dataset.tab === 'adminTab') initAdmin();
 });
 document.querySelectorAll('#adminSub button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#adminSub button').forEach(x => x.classList.toggle('active', x === b));
-  ['aReport','aStaff','aSites'].forEach(t => show($(t), t === b.dataset.sub));
+  ['aReport','aStaff','aSites','aExp'].forEach(t => show($(t), t === b.dataset.sub));
   flash('');
+  if (b.dataset.sub === 'aExp') initAdminExp();
   if (b.dataset.sub === 'aStaff') loadStaff();
   if (b.dataset.sub === 'aSites') renderSites();
 });
@@ -465,7 +544,7 @@ $('punchBtn').onclick = async () => {
     ['remarks','workDone','wpRef','pending'].forEach(id => $(id).value = '');
     show($('selfiePreview'), false); show($('camBtn'), true); show($('retakeBtn'), false);
     renderPunch();
-    flash('✔ ' + r.message, 's');
+    flash('✔ ' + r.message + (type === 'OUT' ? '\n\nAny travel or other expenses today? Add them in the Expenses tab.' : ''), 's');
   }catch(e){ handleErr(e); }
   finally{ busy(false); }
 };
@@ -605,6 +684,165 @@ $('sAdd').onclick = async () => {
     flash('✔ ' + r.message, 's');
   }catch(e){ handleErr(e); }
   finally{ busy(false); }
+};
+
+/* ---------------- EXPENSES (staff) ---------------- */
+let expReady = false, eBill = '';
+const money = n => '₹' + Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function kmRate(cat){ if (!S.exp) return 0; return /2 wheeler/.test(cat) ? S.exp.km2w : /4 wheeler/.test(cat) ? S.exp.km4w : 0; }
+function initExpenses(){
+  if (!S.exp){ flash('Expenses need the latest server code (v2.1). Ask admin to paste the new Code.gs and deploy a NEW VERSION.'); return; }
+  if (!expReady){
+    $('eDate').value = todayISO(); $('eDate').max = todayISO();
+    $('eMonth').value = todayISO().slice(0,7);
+    $('eCat').innerHTML = '<option value="">— Select category —</option>' + S.exp.cats.map(c => `<option>${esc(c)}</option>`).join('');
+    expReady = true;
+  }
+  const keep = $('eSite').value;
+  $('eSite').innerHTML = '<option value="">Office / General (no client)</option>' +
+    S.sites.map(s => `<option value="${esc(s.id)}">${esc(s.client)} – ${esc(s.site)}</option>`).join('');
+  const def = keep || (S.status && (S.status.openIn || S.status.last) ? (S.status.openIn || S.status.last).siteId : '');
+  if (S.sites.some(s => s.id === def)) $('eSite').value = def;
+  $('eBillNote').textContent = `(compulsory above ₹${S.exp.billAbove})`;
+  updateExpForm(); loadMyExpenses();
+}
+function updateExpForm(){
+  const rate = kmRate($('eCat').value);
+  show($('eKmBox'), !!rate); show($('eAmtBox'), !rate);
+  $('eKmCalc').textContent = rate ? `@ ₹${rate}/km = ${money((Number($('eKm').value)||0) * rate)}` : '';
+}
+$('eCat').onchange = updateExpForm; $('eKm').oninput = updateExpForm;
+$('eMonth').onchange = loadMyExpenses;
+$('eBillBtn').onclick = () => $('eBillFile').click();
+$('eBillClear').onclick = () => { eBill = ''; show($('eBillPrev'), false); $('eBillName').textContent = ''; show($('eBillClear'), false); };
+$('eBillFile').onchange = e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  if (f.type === 'application/pdf'){
+    if (f.size > 4 * 1024 * 1024) return flash('PDF is too large (max 4 MB). Take a photo instead.');
+    const rd = new FileReader();
+    rd.onload = () => { eBill = rd.result; show($('eBillPrev'), false); $('eBillName').textContent = '📄 ' + f.name; show($('eBillClear'), true); };
+    rd.readAsDataURL(f); return;
+  }
+  const img = new Image();
+  img.onload = () => {
+    const W = Math.min(1200, img.naturalWidth), H = Math.round(img.naturalHeight * W / img.naturalWidth);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    c.getContext('2d').drawImage(img, 0, 0, W, H);
+    eBill = c.toDataURL('image/jpeg', 0.7);
+    $('eBillPrev').src = eBill; show($('eBillPrev'), true); $('eBillName').textContent = ''; show($('eBillClear'), true);
+    URL.revokeObjectURL(img.src);
+  };
+  img.onerror = () => flash('Could not read that image. Try taking a photo again.');
+  img.src = URL.createObjectURL(f);
+};
+$('eSave').onclick = async () => {
+  const cat = $('eCat').value, rate = kmRate(cat);
+  if (!cat) return flash('Select a category.');
+  const amt = rate ? (Number($('eKm').value)||0) * rate : Number($('eAmt').value)||0;
+  if (!(amt > 0)) return flash(rate ? 'Enter kilometres travelled.' : 'Enter the amount.');
+  if (!$('eDesc').value.trim()) return flash('Enter a short description.');
+  if (!rate && !eBill && amt > S.exp.billAbove) return flash(`Bill photo is required for amounts above ₹${S.exp.billAbove}.`);
+  busy(true);
+  try{
+    const r = await api('addExpense', { date:$('eDate').value, siteId:$('eSite').value, category:cat, km:$('eKm').value,
+      amount:$('eAmt').value, description:$('eDesc').value, bill:eBill });
+    ['eKm','eAmt','eDesc'].forEach(id => $(id).value = ''); $('eBillClear').click(); updateExpForm();
+    flash('✔ ' + r.message, 's');
+    $('eMonth').value = $('eDate').value.slice(0,7); loadMyExpenses();
+  }catch(e){ handleErr(e); }
+  finally{ busy(false); }
+};
+function statusPill(s){ return `<span class="pill ${s==='Approved'||s==='Paid'?'ok':s==='Rejected'?'bad':'warn'}">${esc(s)}</span>`; }
+function totalsHtml(t){
+  return `<span>Claimed <b>${money(t.claimed)}</b></span><span>Pending <b>${money(t.Pending)}</b></span>` +
+         `<span>Approved <b>${money(t.Approved)}</b></span><span>Paid <b>${money(t.Paid)}</b></span><span>Rejected <b>${money(t.Rejected)}</b></span>`;
+}
+async function loadMyExpenses(){
+  $('eList').textContent = 'Loading…';
+  try{
+    const r = await api('myExpenses', { month:$('eMonth').value });
+    $('eTotals').innerHTML = totalsHtml(r.totals);
+    $('eList').innerHTML = r.items.length ? r.items.map(i => `<div class="hist-item">
+      ${statusPill(i.status)} <b>${esc(i.date)}</b> · <b>${money(i.amount)}</b>
+      <div>${esc(i.category)}${i.km ? ` · ${esc(i.km)} km` : ''} · ${esc(i.client)}</div>
+      <div class="muted">${esc(i.description)}</div>
+      ${i.bill ? `<a href="${esc(i.bill)}" target="_blank" rel="noopener">View bill</a>` : '<span class="muted">No bill</span>'}
+      ${i.remark ? `<div class="muted">Admin: ${esc(i.remark)}</div>` : ''}
+      ${i.status === 'Pending' ? `<div style="margin-top:6px"><button class="btn ghost sm" data-del="${esc(i.id)}">Delete</button></div>` : ''}
+    </div>`).join('') : 'No expenses this month.';
+    $('eList').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+      if (b.dataset.confirm !== '1'){ b.dataset.confirm = '1'; b.textContent = 'Tap again to delete'; return; }
+      busy(true);
+      try{ const x = await api('deleteExpense', { id:b.dataset.del }); flash('✔ ' + x.message, 's'); loadMyExpenses(); }
+      catch(e){ handleErr(e); } finally{ busy(false); }
+    });
+  }catch(e){ $('eList').textContent = ''; handleErr(e); }
+}
+
+/* ---------------- EXPENSES (admin) ---------------- */
+let xReady = false;
+function initAdminExp(){
+  if (xReady) return;
+  $('xFrom').value = todayISO().slice(0,8) + '01'; $('xTo').value = todayISO(); $('xStatus').value = 'Pending';
+  xReady = true; runExp();
+}
+async function runExp(){
+  busy(true);
+  try{
+    const r = await api('listExpenses', { from:$('xFrom').value, to:$('xTo').value, filterEmp:$('xEmp').value, status:$('xStatus').value });
+    S.xr = r;
+    const cur = $('xEmp').value;
+    $('xEmp').innerHTML = '<option value="">All staff</option>' + r.staff.map(s => `<option value="${esc(s.empCode)}">${esc(s.name)} (${esc(s.empCode)})</option>`).join('');
+    $('xEmp').value = cur;
+    renderExp();
+  }catch(e){ handleErr(e); }
+  finally{ busy(false); }
+}
+$('xRun').onclick = runExp;
+function renderExp(){
+  const items = S.xr.items, byStaff = {}, byClient = {};
+  items.forEach(i => {
+    const a = byStaff[i.empCode] = byStaff[i.empCode] || { name:i.name, n:0, claimed:0, Pending:0, Approved:0, Paid:0, Rejected:0 };
+    a.n++; a.claimed += i.amount; a[i.status] += i.amount;
+    if (i.status === 'Approved' || i.status === 'Paid') byClient[i.client] = (byClient[i.client] || 0) + i.amount;
+  });
+  $('xTotals').innerHTML = totalsHtml(S.xr.totals);
+  $('xSummary').innerHTML = (Object.keys(byStaff).length ? '<table><tr><th>Staff</th><th>Claims</th><th>Claimed</th><th>Pending</th><th>Approved</th><th>Paid</th><th>Rejected</th></tr>' +
+      Object.keys(byStaff).map(k => { const a = byStaff[k]; return `<tr><td>${esc(a.name)}<div class="muted">${esc(k)}</div></td><td>${a.n}</td><td>${money(a.claimed)}</td><td>${money(a.Pending)}</td><td>${money(a.Approved)}</td><td>${money(a.Paid)}</td><td>${money(a.Rejected)}</td></tr>`; }).join('') + '</table>'
+      : '<div class="muted">No claims in this period.</div>') +
+    (Object.keys(byClient).length ? '<h2 style="margin-top:14px">Approved / paid by client <span class="muted">(for recovery from clients)</span></h2><table><tr><th>Client</th><th>Amount</th></tr>' +
+      Object.keys(byClient).sort().map(c => `<tr><td>${esc(c)}</td><td>${money(byClient[c])}</td></tr>`).join('') + '</table>' : '');
+  $('xDetail').innerHTML = items.length ? '<table><tr><th><input type="checkbox" id="xAll" style="width:auto"></th><th>Date</th><th>Staff</th><th>Client</th><th>Category</th><th>Amount</th><th>Description</th><th>Bill</th><th>Status</th><th>Remark</th></tr>' +
+    items.map(i => `<tr><td><input type="checkbox" class="xChk" value="${esc(i.id)}" style="width:auto"></td><td>${esc(i.date)}</td><td>${esc(i.name)}</td>
+      <td>${esc(i.client)}</td><td>${esc(i.category)}${i.km ? `<div class="muted">${esc(i.km)} km</div>` : ''}</td><td><b>${money(i.amount)}</b></td>
+      <td>${esc(i.description)}</td><td>${i.bill ? `<a href="${esc(i.bill)}" target="_blank" rel="noopener">View</a>` : '<span class="pill warn">none</span>'}</td>
+      <td>${statusPill(i.status)}${i.by ? `<div class="muted">${esc(i.by)} ${esc(i.on)}</div>` : ''}</td><td>${esc(i.remark)}</td></tr>`).join('') + '</table>'
+    : '<div class="muted">No claims.</div>';
+  const all = $('xAll'); if (all) all.onchange = () => document.querySelectorAll('.xChk').forEach(c => c.checked = all.checked);
+  show($('xSumCard'), true); show($('xDetCard'), true);
+}
+async function setExp(status){
+  const ids = [...document.querySelectorAll('.xChk:checked')].map(c => c.value);
+  if (!ids.length) return flash('Tick at least one claim first.');
+  busy(true);
+  try{
+    const r = await api('setExpenseStatus', { ids, status, remark:$('xRemark').value });
+    $('xRemark').value = ''; flash('✔ ' + r.message, 's'); await runExp();
+  }catch(e){ handleErr(e); }
+  finally{ busy(false); }
+}
+$('xApprove').onclick = () => setExp('Approved');
+$('xReject').onclick = () => setExp('Rejected');
+$('xPaid').onclick = () => setExp('Paid');
+$('xCsv').onclick = () => {
+  if (!S.xr) return flash('Click Show first.');
+  const cols = ['id','date','empCode','name','client','category','km','amount','description','status','by','on','remark','bill'];
+  const q = v => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+  const csv = [cols.join(',')].concat(S.xr.items.map(i => cols.map(c => q(i[c])).join(','))).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type:'text/csv' }));
+  a.download = `expenses_${S.xr.from}_to_${S.xr.to}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
 };
 
 /* ---------------- START ---------------- */
