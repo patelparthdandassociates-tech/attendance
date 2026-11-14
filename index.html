@@ -74,6 +74,18 @@
   .subbox{margin-top:10px;padding:10px;border:1px dashed #b8c4d6;border-radius:10px;background:#f9fbfd}
   .warnbox{border:1px solid #e0a800;background:#fff8e1}
   .warnbox .btn{margin:6px 6px 0 0}
+  .r-viewnote{display:none} body.limited .r-viewnote{display:block}
+  .mx{border-collapse:collapse;width:100%;font-size:13px}
+  .mx th,.mx td{border-bottom:1px solid #e3e8ef;padding:6px 6px;text-align:center;vertical-align:middle}
+  .mx td:first-child,.mx th:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:2;min-width:200px;max-width:260px;white-space:normal}
+  .mx th:first-child{background:#eef3fa;z-index:3}
+  .mx tr.area td:first-child{background:#f6f8fb}
+  .mx th{white-space:normal;min-width:96px}
+  .mx th{position:sticky;top:0;background:#eef3fa;z-index:1;font-size:12px}
+  .mx tr.area td{background:#f6f8fb;font-weight:bold;text-align:left;color:#1f3a5f}
+  .mx input[type=checkbox]{width:18px;height:18px;margin:0}
+  .mx select{font-size:12px;padding:3px;width:auto;max-width:120px}
+  .mx .changed{background:#fff4c2}
   .sitecard{border:1px solid #e3e8ef;border-radius:10px;padding:10px;margin-bottom:10px}
   #policyView .ptext{white-space:pre-line;font-size:14px;line-height:1.55;background:#f6f8fb;border-radius:10px;padding:12px;max-height:55vh;overflow:auto}
   /* ---------- printable reports ---------- */
@@ -191,6 +203,8 @@
     <!-- ---------- PUNCH ---------- -->
     <div id="punchTab">
       <div class="qbanner hidden" id="qBanner"></div>
+      <div id="missedBox"></div>
+      <div class="card hidden warnbox" id="emailNudge">📧 Add your <b>email</b> in the <b>Account</b> tab to get reminders when you forget to check in or out.</div>
       <div class="card" id="statusCard"></div>
 
       <div class="card">
@@ -324,6 +338,11 @@
     <div id="accTab" class="hidden">
       <div class="card"><h2>My last 20 punches</h2><div id="histList" class="muted">Loading…</div></div>
       <div class="card">
+        <h2>My email (for reminders)</h2>
+        <p class="muted">You get an email if you have not checked in by the reminder time or are still checked in in the evening.</p>
+        <div class="row"><input id="myEmail" type="email" autocomplete="email" placeholder="name@example.com"><button class="btn sm" id="myEmailBtn" style="flex:0 0 auto">Save</button></div>
+      </div>
+      <div class="card">
         <h2>Change my password</h2>
         <label>Current password</label><input id="pwOld" type="password" autocomplete="current-password">
         <label>New password (min 6 characters)</label><input id="pwNew" type="password" autocomplete="new-password">
@@ -334,6 +353,7 @@
 
     <!-- ---------- ADMIN ---------- -->
     <div id="adminTab" class="hidden">
+      <div class="card r-viewnote" style="background:#fff8e1;border:1px solid #e0a800">🔑 <b>Admin</b> – you can use only the steps the <b>Super Admin</b> has ticked for you. Ask the Super Admin for anything else.</div>
       <div class="tabs" id="adminSub">
         <button data-sub="aDash" class="active">Dashboard</button>
         <button data-sub="aReport">Attendance</button>
@@ -342,6 +362,7 @@
         <button data-sub="aPrint">Print / PDF</button>
         <button data-sub="aStaff">Staff</button>
         <button data-sub="aSites">Sites</button>
+        <button data-sub="aAccess" class="hidden">🔑 Access</button>
       </div>
 
       <div id="aDash">
@@ -372,17 +393,17 @@
           <br><div class="row"><button class="btn sm" id="laRun">Show</button><button class="btn sm xbtn" id="laXls">⬇ Excel</button></div>
         </div>
         <div class="card hidden" id="laCard">
-          <label style="margin-top:0">Remark (compulsory for Reject)</label><input id="laRemark">
-          <div class="row" style="margin:10px 0"><button class="btn sm in" id="laApprove">✓ Approve selected</button><button class="btn sm outb" id="laReject">✗ Reject selected</button></div>
+          <div class="r-leaveApprove"><label style="margin-top:0">Remark (compulsory for Reject)</label><input id="laRemark"></div>
+          <div class="row r-leaveApprove" style="margin:10px 0"><button class="btn sm in" id="laApprove">✓ Approve selected</button><button class="btn sm outb" id="laReject">✗ Reject selected</button></div>
           <div class="scroll" id="laList"></div>
         </div>
         <div class="card">
           <h2>Firm holidays</h2>
-          <div class="row">
+          <div class="row r-holidays">
             <div><label>Date</label><input type="date" id="hDate"></div>
             <div><label>Holiday</label><input id="hName" placeholder="e.g. Diwali (Laxmi Pujan)"></div>
           </div>
-          <br><div class="row"><button class="btn sm" id="hAdd">Add holiday</button><button class="btn sm xbtn" id="hXls">⬇ Excel</button></div>
+          <br><div class="row"><button class="btn sm r-holidays" id="hAdd">Add holiday</button><button class="btn sm xbtn" id="hXls">⬇ Excel</button></div>
           <br><div class="scroll" id="hList"></div>
         </div>
       </div>
@@ -407,11 +428,11 @@
             <div><label>To</label><input type="date" id="pTo"></div>
           </div>
           <div id="pStaffBox" class="hidden"><label>Staff</label><select id="pStaff"></select></div>
-          <div class="row">
+          <div class="r-rptSign"><div class="row">
             <div><label>Prepared by</label><select id="pPrep"></select></div>
             <div><label>Checked by</label><select id="pChk"></select></div>
           </div>
-          <label>Approved by</label><select id="pAppr"></select>
+          <label>Approved by</label><select id="pAppr"></select></div>
           <div id="pClientBox" class="hidden"><label>Client</label><select id="pClient"></select>
             <div class="muted" style="margin-top:4px">Only approved / paid expenses are included.</div></div>
           <br>
@@ -437,11 +458,11 @@
           <br><br>
           <div class="row">
             <button class="btn sm" id="rRun">Show report</button>
-            <button class="btn sm xbtn" id="rCsv">⬇ Excel</button>
+            <button class="btn sm xbtn r-attXls" id="rCsv">⬇ Excel</button>
           </div>
         </div>
         <div class="card hidden" id="rSummaryCard"><h2>Summary</h2><div class="scroll" id="rSummary"></div></div>
-        <div class="card hidden editcard" id="vEditCard">
+        <div class="card hidden editcard r-attAny" id="vEditCard">
           <h2>✎ Correct visit</h2>
           <div id="vEditInfo" class="muted"></div>
           <div class="row">
@@ -461,7 +482,7 @@
           <br>
           <div class="row wrap">
             <button class="btn sm" id="vSave">Save correction</button>
-            <button class="btn sm outb" id="vCancelVisit">Cancel this visit</button>
+            <button class="btn sm outb r-attCancel" id="vCancelVisit">Cancel this visit</button>
             <button class="btn ghost sm" id="vClose">Close</button>
           </div>
         </div>
@@ -486,7 +507,7 @@
           </div>
         </div>
         <div class="card hidden" id="xSumCard"><h2>Summary</h2><div class="tot" id="xTotals"></div><div class="scroll" id="xSummary"></div></div>
-        <div class="card hidden editcard" id="xEditCard">
+        <div class="card hidden editcard r-expEdit" id="xEditCard">
           <h2>✎ Correct expense claim</h2>
           <div id="xEditInfo" class="muted"></div>
           <div class="row">
@@ -507,12 +528,12 @@
         </div>
         <div class="card hidden" id="xDetCard">
           <h2>Claims</h2>
-          <label style="margin-top:0">Remark (compulsory for Reject)</label>
-          <input id="xRemark" placeholder="e.g. Bill not clear / not client related">
+          <div class="r-expAppr"><label style="margin-top:0">Remark (compulsory for Reject)</label>
+          <input id="xRemark" placeholder="e.g. Bill not clear / not client related"></div>
           <div class="row wrap" style="margin:10px 0">
-            <button class="btn sm in" id="xApprove">✓ Approve selected</button>
-            <button class="btn sm outb" id="xReject">✗ Reject selected</button>
-            <button class="btn sm" id="xPaid">₹ Mark selected Paid</button>
+            <button class="btn sm in r-expAppr" id="xApprove">✓ Approve selected</button>
+            <button class="btn sm outb r-expAppr" id="xReject">✗ Reject selected</button>
+            <button class="btn sm r-expPaid" id="xPaid">₹ Mark selected Paid</button>
           </div>
           <div class="scroll" id="xDetail"></div>
         </div>
@@ -522,20 +543,20 @@
         <div class="card" id="regCard">
           <h2>New registrations to approve</h2>
           <div id="regList" class="muted">Loading…</div>
-          <div class="subbox" style="margin-top:12px">
+          <div class="subbox r-regCode" style="margin-top:12px">
             <div><b>Self-registration:</b> <span id="regState"></span> &nbsp; <b>Joining code:</b> <span id="regCodeShow" style="font-size:18px;letter-spacing:1px"></span></div>
             <div class="muted">Give this code to new joiners with the app link. Make a new code when someone leaves or the code is shared outside.</div>
             <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="regNewCode">↻ New joining code</button><button class="btn ghost sm" id="regToggle"></button><button class="btn ghost sm" id="regShare">📋 Copy invite message</button></div>
           </div>
         </div>
-        <div class="card">
+        <div class="card r-staffForm">
           <h2 id="stTitle">Add staff</h2>
           <div class="row">
             <div><label>Employee ID</label><input id="stCode" autocapitalize="characters" placeholder="EMP002"></div>
             <div><label>Name</label><input id="stName"></div>
           </div>
           <div class="row">
-            <div><label>Role</label><select id="stRole"><option>Staff</option><option>Admin</option></select></div>
+            <div><label>Role</label><select id="stRole"><option>Staff</option><option>Admin</option><option>Super Admin</option></select></div>
             <div><label>Mobile</label><input id="stMobile" inputmode="tel"></div>
           </div>
           <label>Email</label><input id="stEmail" type="email">
@@ -547,9 +568,12 @@
             <div><label>Scheme</label><select id="stScheme"><option value="New">New Scheme (2 years)</option><option value="Old">Old Scheme (3 years)</option></select></div>
             <div><label>Monthly stipend (₹)</label><input type="number" id="stStipend" inputmode="numeric"></div>
           </div>
+          <div id="stAdminNote" class="subbox hidden"><b>Admin</b> = only the steps ticked in the <b>🔑 Access</b> tab.
+            <span id="stPresetBox"><br><label>Start with the rights of</label><select id="stPreset"><option value="view">View only</option><option value="partner">Partner</option><option value="manager">Office Manager</option><option value="accounts">Accounts</option></select></span></div>
+          <div id="stSuperNote" class="subbox hidden"><b>Super Admin</b> = full access: approvals, corrections, staff, sites, settings. Keep at least one Super Admin.</div>
           <label class="row hidden" style="color:#1d2433" id="stResetBox"><input type="checkbox" id="stReset" style="width:auto;flex:0"> <span>Reset phone (staff can log in from a new phone)</span></label>
-          <div class="muted" style="margin-top:6px">For partners: give Role = <b>Admin</b> and the full name, e.g. <b>CA Parth Patel</b>. Their name then appears on approvals and printed reports.</div>
-          <label id="stPwLabel">Password (min 6 characters)</label><input id="stPw" type="text" autocomplete="off">
+          <div class="muted" style="margin-top:6px" id="stRoleHelp"><b>Roles:</b> <b>Super Admin</b> – full access (makes all changes). <b>Admin</b> – sees all reports, cannot change. <b>Staff</b> – own punches, expenses, leave. Use the full name for partners, e.g. <b>CA Parth Patel</b> – it appears on approvals and printed reports.</div>
+          <div class="r-staffPwBox"><label id="stPwLabel">Password (min 6 characters)</label><input id="stPw" type="text" autocomplete="off"></div>
           <label class="row" style="color:#1d2433"><input type="checkbox" id="stActive" style="width:auto;flex:0" checked> <span>Active</span></label>
           <br>
           <div class="row">
@@ -560,8 +584,19 @@
         <div class="card"><div class="row"><h2 style="margin:0">All staff</h2><div style="text-align:right"><button class="btn sm xbtn" id="stXls">⬇ Excel</button></div></div><br><div class="scroll" id="staffList">Loading…</div></div>
       </div>
 
-      <div id="aSites" class="hidden">
+      <div id="aAccess" class="hidden">
         <div class="card">
+          <div class="row"><h2 style="margin:0">🔑 Access matrix</h2><div style="text-align:right"><button class="btn sm xbtn" id="mxXls">⬇ Excel</button></div></div>
+          <p class="muted">Tick what each Admin may do. Changes apply as soon as you tap <b>Save</b> – the Admin does not need to log out. Every tick / untick is written to the Audit Log. Super Admins always have everything; Staff only their own records.</p>
+          <div class="row"><div><label>Expense approval limit for “up to the limit” (₹)</label><input id="mxLimit" type="number" inputmode="numeric"></div><div></div></div>
+          <div class="scroll" id="mxGrid" style="max-height:70vh;margin-top:10px">Loading…</div>
+          <div class="row" style="margin-top:10px"><button class="btn" id="mxSave">Save access</button><button class="btn ghost" id="mxReset" style="flex:0 0 auto">Undo unsaved changes</button></div>
+          <div class="muted" style="margin-top:8px">Always Super Admin only (not in the grid): making Admins / Super Admins, editing or resetting an Admin, this matrix, firms &amp; letterheads, the Settings sheet. Nobody approves their own leave or expense claim.</div>
+        </div>
+      </div>
+
+      <div id="aSites" class="hidden">
+        <div class="card r-siteAdd">
           <h2>Add client site</h2>
           <p class="muted">Best done while standing at the client's office: tap “Use my current location”. Or paste coordinates from Google Maps (long-press the place → copy the two numbers).</p>
           <label>Client name</label><input id="sClient" placeholder="e.g. ABC Industries Ltd">
@@ -580,7 +615,7 @@
             <button class="btn sm" id="sAdd">Add site</button>
           </div>
         </div>
-        <div class="card">
+        <div class="card r-siteOffice">
           <h2>Our office</h2>
           <p class="muted">Staff can also punch at the office. Stand inside the office and tap the button to set its exact location.</p>
           <button class="btn sm" id="sOffice">📍 Set office location to where I am now</button>
@@ -596,18 +631,20 @@
           <h2 id="fTitle">Firms (letterheads)</h2>
           <div class="scroll" id="firmList"></div>
           <input type="hidden" id="fCode">
+          <div class="r-super">
           <label>Firm name</label><input id="fName" placeholder="e.g. Rishabh S. Vora &amp; Co.">
           <div class="row"><div><label>Tagline</label><input id="fTag" value="Chartered Accountants"></div><div><label>FRN</label><input id="fFrn"></div></div>
           <label>Address</label><input id="fAddr">
           <label>Phone / email</label><input id="fContact">
           <br><br><div class="row"><button class="btn sm" id="fSave">Add firm</button><button class="btn ghost sm hidden" id="fNew">New firm</button></div>
+          </div>
         </div>
       </div>
     </div>
   </section>
   <div class="foot"><div class="credit">Prepared by <b>CA Parth Patel</b><br>in consultation with <b>CA Rishabh Vora</b> &amp; <b>CA Raman Shah</b></div>
   <div>© RAMAN S SHAH &amp; CO LLP, Chartered Accountants</div>
-  <div id="foot">App v2.6</div></div>
+  <div id="foot">App v3.0</div></div>
 </main>
 
 <div class="spinner hidden" id="spinner">Please wait…</div>
@@ -617,7 +654,7 @@
 /* ========= CONFIG: your Apps Script Web App URL (ends with /exec) ========= */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNxOBL1h0AVLOfF6x1uAMLpDxzfzD3yAmJ57hT1DIrEyKhtz7F-oDQycnq-PXIYwID/exec';
 /* ========================================================================= */
-const APP_VERSION = '2.6';
+const APP_VERSION = '3.0';
 
 const $ = id => document.getElementById(id);
 const DEVICE_ID = (() => {
@@ -689,9 +726,13 @@ function startSession(r){
   S.firm = r.firm || { name: $('firmName').textContent, tagline: 'Chartered Accountants', address:'', frn:'', contact:'', lateAfter:'10:15' };
   if (r.firm){ $('firmName').textContent = r.firm.name; $('firmSub').textContent = r.firm.tagline; }
   else if (r.firmName && r.firmName !== 'My CA Firm') $('firmName').textContent = r.firmName;
-  $('userLine').textContent = `${r.user.name} (${r.user.empCode})${r.user.role==='Admin' ? ' · Admin' : ''}`;
+  $('userLine').textContent = `${r.user.name} (${r.user.empCode})${r.user.superAdmin ? ' · Super Admin' : r.user.role==='Admin' ? ' · Admin' : ''}`;
   show($('loginView'), false); show($('appView'), true); show($('logoutBtn'), true);
   show($('adminTabBtn'), r.user.role === 'Admin');
+  applyRights(r);
+  S.missedOut = r.missedOut || []; S.email = r.email || '';
+  $('myEmail').value = S.email; show($('emailNudge'), r.user.role !== 'Admin' && r.missedOut !== undefined && !S.email);
+  renderMissed();
   $('foot').textContent = `App v${APP_VERSION} · Server v${r.version}`;
   if (r.version !== APP_VERSION) flash(`Note: server is v${r.version}, app is v${APP_VERSION}. Ask admin to deploy the latest Code.gs as a NEW VERSION.`, 'i');
   if (r.policy && !r.policy.accepted){
@@ -700,6 +741,32 @@ function startSession(r){
   }
   renderPunch(); getLocation(); renderQueue(); syncQueue();
 }
+function renderMissed(){
+  const list = S.missedOut || [];
+  $('missedBox').innerHTML = list.map(m => `<div class="card warnbox" data-mo="${esc(m.outId)}">
+    <b>🌙 You did not check out on ${esc(m.date)}</b> at <b>${esc(m.client)}</b> – ${esc(m.site)}${m.inTime ? ` (checked in ${esc(m.inTime)})` : ''}.<br>
+    <span class="muted">The visit was closed automatically at midnight. Enter the time you actually left – it is shown to the partner for review.</span>
+    <div class="row" style="margin-top:8px"><div><label>Time you left</label><input type="time" class="moTime"></div><div><label>Why was check-out missed?</label><input class="moReason" placeholder="e.g. Phone battery died"></div></div>
+    <label>Work done</label><input class="moWork" placeholder="e.g. Vouching of purchase bills">
+    <br><button class="btn sm" style="margin-top:8px">Save leaving time</button></div>`).join('');
+  $('missedBox').querySelectorAll('[data-mo]').forEach(card => card.querySelector('button').onclick = async () => {
+    const q = c => card.querySelector(c).value.trim();
+    if (!q('.moTime')) return flash('Enter the time you left.');
+    if (!q('.moReason')) return flash('Enter why the check-out was missed.');
+    if (!q('.moWork')) return flash('Enter the work done.');
+    busy(true);
+    try{ const r = await api('missedOutTime', { outId:card.dataset.mo, time:q('.moTime'), reason:q('.moReason'), workDone:q('.moWork') });
+         S.missedOut = r.missedOut; renderMissed(); flash('✔ ' + r.message, 's'); }
+    catch(e){ handleErr(e); } finally{ busy(false); }
+  });
+}
+$('myEmailBtn').onclick = async () => {
+  const e = $('myEmail').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) return flash('Enter a valid email address.');
+  busy(true);
+  try{ const r = await api('setMyEmail', { email:e }); S.email = r.email; show($('emailNudge'), false); flash('✔ ' + r.message, 's'); }
+  catch(x){ handleErr(x); } finally{ busy(false); }
+};
 $('policyBtn').onclick = async () => {
   if (!$('policyChk').checked) return flash('Please tick “I have read and agree” to continue.');
   busy(true);
@@ -739,7 +806,8 @@ document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.onclick = () 
 });
 document.querySelectorAll('#adminSub button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#adminSub button').forEach(x => x.classList.toggle('active', x === b));
-  ['aDash','aReport','aStaff','aSites','aExp','aPrint','aLeave'].forEach(t => show($(t), t === b.dataset.sub));
+  ['aDash','aReport','aStaff','aSites','aExp','aPrint','aLeave','aAccess'].forEach(t => show($(t), t === b.dataset.sub));
+  if (b.dataset.sub === 'aAccess') loadAccess();
   if (b.dataset.sub === 'aLeave') initAdminLeave();
   if (b.dataset.sub === 'aSites') renderFirms();
   if (b.dataset.sub === 'aDash') loadDash();
@@ -750,6 +818,106 @@ document.querySelectorAll('#adminSub button').forEach(b => b.onclick = () => {
   if (b.dataset.sub === 'aStaff') loadStaff();
   if (b.dataset.sub === 'aSites') renderSites();
 });
+/* ---------------- ADMIN ACCESS (matrix) ---------------- */
+// Super Admin = everything. Admin = only the rights ticked for them. Staff = own records.
+const DERIVED = { attAny:['attEdit','attAddOut','attCancel'], expAppr:['expApprove','expApproveHigh'],
+                  staffForm:['staffAdd','staffEdit','staffPw','staffPhone','artEdit'], staffPwBox:['staffAdd','staffPw'], super:[] };
+function can(k){
+  const u = S.user || {};
+  if (u.superAdmin) return true;
+  if (u.role !== 'Admin') return false;
+  if (DERIVED[k]) return DERIVED[k].some(x => (u.rights || []).indexOf(x) >= 0);
+  return (u.rights || []).indexOf(k) >= 0;
+}
+function applyRights(r){
+  S.user = r.user; if (r.rightsList) S.rightsList = r.rightsList; if (r.rightPresets) S.rightPresets = r.rightPresets;
+  if (r.expAdminLimit !== undefined) S.expLimit = r.expAdminLimit;
+  // older server without rights: Super Admin = all, Admin = view
+  if (r.user.role === 'Admin' && !r.user.rights) S.user = Object.assign({}, r.user, { rights: r.user.superAdmin ? null : [] });
+  const keys = (S.rightsList || []).map(x => x[0]).concat(Object.keys(DERIVED));
+  let css = keys.map(k => `body.no-${k} .r-${k}`).join(',');
+  if (!$('rightsCss')) { const st = document.createElement('style'); st.id = 'rightsCss'; document.head.appendChild(st); }
+  $('rightsCss').textContent = css ? css + '{display:none!important}' : '';
+  keys.forEach(k => document.body.classList.toggle('no-' + k, !can(k)));
+  document.body.classList.toggle('limited', r.user.role === 'Admin' && !S.user.superAdmin);
+  const any = (...ks) => ks.some(can);
+  const tabOk = { aDash: any('dashboard'), aReport: any('attView','attXls','attEdit','attAddOut','attCancel'),
+    aExp: any('expView','expApprove','expApproveHigh','expPaid','expEdit'), aLeave: any('leaveView','leaveApprove','holidays'),
+    aPrint: any('rptAttSum','rptAttDet','rptVoucher','rptClient','rptLeave','artView','audit'),
+    aStaff: any('staffView','staffForm','regApprove','regCode'), aSites: any('siteView','siteAdd','siteEdit','siteOffice','siteReview'),
+    aAccess: !!S.user.superAdmin };
+  let first = null;
+  document.querySelectorAll('#adminSub button').forEach(b => {
+    const ok = !!tabOk[b.dataset.sub]; show(b, ok);
+    if (ok && !first) first = b;
+    if (!ok) b.classList.remove('active');
+  });
+  if (first && !document.querySelector('#adminSub button.active:not(.hidden)')) first.classList.add('active');
+  const prt = { attSum:'rptAttSum', attDet:'rptAttDet', voucher:'rptVoucher', client:'rptClient', audit:'audit', artReg:'artView', leaveReg:'rptLeave' };
+  [...$('pType').options].forEach(o => { const ok = !prt[o.value] || can(prt[o.value]); o.hidden = !ok; o.disabled = !ok; });
+  const sel = $('pType').selectedOptions[0], firstOpt = [...$('pType').options].find(o => !o.disabled);
+  if (sel && sel.disabled && firstOpt) $('pType').value = firstOpt.value;
+  // articleship fields read-only without the right
+  ['stArtStart','stScheme','stStipend'].forEach(id => { if ($(id)) $(id).disabled = !can('artEdit'); });
+  if (r.user.role === 'Admin' && !first) flash('No admin rights are ticked for you yet. Ask the Super Admin.', 'i');
+}
+
+/* Access matrix screen (Super Admin) */
+function loadAccess(){
+  $('mxGrid').textContent = 'Loading…';
+  api('listStaff').then(r => { S.mx = { staff: r.staff, list: r.rightsList || S.rightsList, presets: r.rightPresets || S.rightPresets };
+    S.mxLimit = r.expAdminLimit; $('mxLimit').value = r.expAdminLimit; S.mxWork = {}; S.mx.staff.filter(x => x.roleName === 'Admin' && x.active).forEach(x => S.mxWork[x.empCode] = (x.rights || []).slice()); drawAccess(); })
+    .catch(handleErr);
+}
+function drawAccess(){
+  const admins = S.mx.staff.filter(x => x.roleName === 'Admin' && x.active), supers = S.mx.staff.filter(x => x.superAdmin && x.active);
+  if (!admins.length){ $('mxGrid').innerHTML = '<div class="muted">No Admins yet. In the Staff tab, edit a person and set Role = Admin; they then appear here.</div>'; return; }
+  const orig = {}; admins.forEach(a => orig[a.empCode] = a.rights || []);
+  const presetSel = code => `<select data-preset="${esc(code)}"><option value="">Preset…</option><option value="view">View only</option><option value="partner">Partner</option><option value="manager">Office Manager</option><option value="accounts">Accounts</option><option value="all">All</option><option value="none">None</option>${admins.filter(a => a.empCode !== code).map(a => `<option value="copy:${esc(a.empCode)}">Copy from ${esc(a.name)}</option>`).join('')}</select>`;
+  let html = '<table class="mx"><tr><th>Step / action</th>' + supers.map(x => `<th>${esc(x.name)}<br><span class="muted">Super Admin</span></th>`).join('') +
+    admins.map(a => `<th>${esc(a.name)}<br><span class="muted">${esc(a.empCode)} · <span data-cnt="${esc(a.empCode)}"></span></span><br>${presetSel(a.empCode)}</th>`).join('') + '<th>All</th></tr>';
+  let area = '';
+  S.mx.list.forEach(rt => {
+    if (rt[2] !== area){ area = rt[2]; html += `<tr class="area"><td colspan="${2 + supers.length + admins.length}">${esc(area)}</td></tr>`; }
+    const lbl = rt[0] === 'expApprove' ? `Approve / reject claims up to ₹${Number($('mxLimit').value || S.mxLimit || 0).toLocaleString('en-IN')}` : rt[0] === 'expApproveHigh' ? `Approve / reject claims above ₹${Number($('mxLimit').value || S.mxLimit || 0).toLocaleString('en-IN')}` : rt[1];
+    html += `<tr><td>${esc(lbl)}</td>` + supers.map(() => '<td>✔</td>').join('') +
+      admins.map(a => { const on = S.mxWork[a.empCode].indexOf(rt[0]) >= 0, ch = on !== (orig[a.empCode].indexOf(rt[0]) >= 0);
+        return `<td class="${ch ? 'changed' : ''}"><input type="checkbox" data-c="${esc(a.empCode)}" data-k="${esc(rt[0])}"${on ? ' checked' : ''}></td>`; }).join('') +
+      `<td><input type="checkbox" data-row="${esc(rt[0])}"${admins.every(a => S.mxWork[a.empCode].indexOf(rt[0]) >= 0) ? ' checked' : ''}></td></tr>`;
+  });
+  $('mxGrid').innerHTML = html + '</table>';
+  admins.forEach(a => { const el = $('mxGrid').querySelector(`[data-cnt="${a.empCode}"]`); if (el) el.textContent = S.mxWork[a.empCode].length + ' ticks'; });
+  $('mxGrid').querySelectorAll('[data-c]').forEach(c => c.onchange = () => {
+    const w = S.mxWork[c.dataset.c]; const i = w.indexOf(c.dataset.k);
+    if (c.checked && i < 0) w.push(c.dataset.k); if (!c.checked && i >= 0) w.splice(i, 1); drawAccess();
+  });
+  $('mxGrid').querySelectorAll('[data-row]').forEach(c => c.onchange = () => {
+    admins.forEach(a => { const w = S.mxWork[a.empCode], i = w.indexOf(c.dataset.row); if (c.checked && i < 0) w.push(c.dataset.row); if (!c.checked && i >= 0) w.splice(i, 1); }); drawAccess();
+  });
+  $('mxGrid').querySelectorAll('[data-preset]').forEach(sl => sl.onchange = () => {
+    const v = sl.value, code = sl.dataset.preset; if (!v) return;
+    S.mxWork[code] = v === 'all' ? S.mx.list.map(x => x[0]) : v === 'none' ? [] : v.indexOf('copy:') === 0 ? S.mxWork[v.slice(5)].slice() : (S.mx.presets[v] || []).slice();
+    drawAccess();
+  });
+}
+$('mxLimit').oninput = () => { if (S.mx) drawAccess(); };
+$('mxReset').onclick = () => loadAccess();
+$('mxSave').onclick = async () => {
+  busy(true);
+  try{
+    const r = await api('setRights', { rights:S.mxWork, expLimit:$('mxLimit').value });
+    takeStaff(r); S.mx.staff = r.staff; S.mxLimit = r.expAdminLimit; S.mxWork = {}; r.staff.filter(x => x.roleName === 'Admin' && x.active).forEach(x => S.mxWork[x.empCode] = (x.rights || []).slice());
+    drawAccess(); flash('✔ ' + r.message, 's');
+  }catch(e){ handleErr(e); } finally{ busy(false); }
+};
+$('mxXls').onclick = () => {
+  if (!S.mx) return;
+  const admins = S.mx.staff.filter(x => x.roleName === 'Admin' && x.active), supers = S.mx.staff.filter(x => x.superAdmin && x.active);
+  xlsxDownload('Access_matrix_' + todayISO() + '.xlsx', [{ name:'Access matrix', title:'ACCESS MATRIX – ADMIN RIGHTS', meta:['As on ' + new Date().toLocaleDateString('en-IN') + ' · Expense limit ₹' + $('mxLimit').value],
+    header:['Area','Step / action'].concat(supers.map(x => x.name + ' (Super Admin)'), admins.map(a => a.name + ' (' + a.empCode + ')')),
+    rows: S.mx.list.map(rt => [rt[2], rt[1]].concat(supers.map(() => '✔'), admins.map(a => S.mxWork[a.empCode].indexOf(rt[0]) >= 0 ? '✔' : '✖'))),
+    widths:[18,46].concat(supers.map(() => 16), admins.map(() => 16)) }]);
+};
 function handleErr(e){ if (e.authError){ flash(e.message); setTimeout(() => location.reload(), 1500); } else flash(e.message); }
 
 /* ---------------- PUNCH VIEW ---------------- */
@@ -808,7 +976,7 @@ function getLocation(){
   if (!navigator.geolocation){ $('locInfo').innerHTML = '<span class="pill bad">Location not supported on this browser</span>'; return; }
   $('locInfo').textContent = 'Getting your location…';
   navigator.geolocation.getCurrentPosition(p => {
-    S.pos = { lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy };
+    S.pos = { lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy, t:Date.now() };
     if (!isOut() && !$('siteSelect').value){
       let best = null;
       S.sites.forEach(s => { const d = distM(S.pos.lat,S.pos.lng,s.lat,s.lng); if (d <= s.radius && (!best || d < best.d)) best = {id:s.id,d}; });
@@ -817,13 +985,30 @@ function getLocation(){
     updateLocInfo();
   }, err => {
     S.pos = null;
-    const tips = err.code === 1
-      ? 'Location permission is blocked. Android Chrome: tap the 🔒 icon left of the address → Permissions → Location → Allow. iPhone: Settings → Privacy → Location Services → Safari Websites → While Using.'
-      : 'Turn on GPS / Location on the phone, move near a window, then tap Refresh.';
+    const tips = err.code === 1 ? locTips() : 'Turn on GPS / Location on the phone, move near a window, then tap Refresh.';
     $('locInfo').innerHTML = `<span class="pill bad">Location not available</span><div class="muted" style="margin-top:6px">${esc(tips)}</div>`;
   }, { enableHighAccuracy:true, timeout:25000, maximumAge:0 });
 }
 $('locBtn').onclick = getLocation;
+function locTips(){
+  const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua), chromeIos = /CriOS/.test(ua);
+  if (ios && chromeIos) return 'Location is blocked. iPhone Settings → Privacy & Security → Location Services → ON → Chrome → “While Using the App” + Precise Location ON. Then in Chrome tap the icon left of the address → Location → Allow, and tap Refresh.';
+  if (ios) return 'Location is blocked. iPhone Settings → Privacy & Security → Location Services → ON → Safari Websites → “While Using the App” + Precise Location ON. Also Settings → Apps → Safari → Location → Allow. Then tap Refresh.';
+  return 'Location is blocked. Android Chrome: tap the icon left of the address → Permissions → Location → Allow (and phone Settings → Location → ON). Then tap Refresh.';
+}
+/** Fresh GPS reading right now (used at the moment of check-in / check-out). */
+function freshPos(){
+  return new Promise((ok, bad) => {
+    if (!navigator.geolocation) return bad(new Error('no geo'));
+    navigator.geolocation.getCurrentPosition(p => {
+      S.pos = { lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy, t:Date.now() }; updateLocInfo(); ok(S.pos);
+    }, bad, { enableHighAccuracy:true, timeout:20000, maximumAge:0 });
+  });
+}
+// Coming back to the app (e.g. phone unlocked at the client): read location again
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && S.token && !$('punchTab').classList.contains('hidden') && (!S.pos || Date.now() - (S.pos.t || 0) > 60000)) getLocation();
+});
 function updateLocInfo(){
   if (!S.pos) return;
   const s = selectedSite();
@@ -898,7 +1083,13 @@ $('punchBtn').onclick = async () => {
     if (!$('vPurpose').value) return flash('Select the purpose of the visit.');
     if (!$('vPlace').value.trim()) return flash('Enter the place you are visiting.');
   }
-  if (!S.pos) return flash('Location not available yet. Tap “Refresh location”.');
+  // Always take the location again at the moment of punching
+  busy(true); $('locInfo').textContent = 'Getting your current location…';
+  try { await freshPos(); }
+  catch(e){
+    if (!S.pos || Date.now() - (S.pos.t || 0) > 120000){ busy(false); updateLocInfo(); if (!S.pos) getLocation(); return flash('Could not get your current location. ' + (e && e.code === 1 ? locTips() : 'Turn on GPS, move near a window and try again.')); }
+  }
+  busy(false);
   if (type === 'IN' && s.isNew && S.pos.acc > (S.maxAcc || 150)) return flash(`GPS is weak (±${Math.round(S.pos.acc)} m). A new site needs an accurate location – step outside or near a window and tap “Refresh location”.`);
   if (!S.selfie) return flash('Please take a selfie.');
   if (type === 'OUT' && !$('workDone').value.trim()) return flash('Please enter the work done before checking out.');
@@ -1004,7 +1195,7 @@ function renderReport(){
     Object.keys(sum).map(k => { const x = sum[k]; return `<tr><td>${esc(x.name)}<div class="muted">${esc(k)}</div></td><td>${x.days.size}</td><td>${x.visits}</td><td>${x.hours.toFixed(2)}</td><td>${esc([...x.clients].join(', '))}</td><td>${x.flagged?`<span class="pill bad">${x.flagged}</span>`:'0'}</td></tr>`; }).join('') + '</table>'
     : '<div class="muted">No attendance in this period.</div>';
   $('rDetail').innerHTML = ss.length ? `<table><tr><th></th><th>Date</th><th>Staff</th><th>Client / Site</th><th>In</th><th>Out</th><th>Hrs</th><th>Fence</th><th>Work done</th><th>Flags / Remarks</th><th>Selfies</th></tr>` +
-    ss.map((s, idx) => `<tr><td><button class="btn ghost sm" data-ve="${idx}">✎ Edit</button>${s.edited ? '<div><span class="pill warn">edited</span></div>' : ''}</td><td>${esc(s.date)}</td><td>${esc(s.name)}</td><td>${esc(s.client)}<div class="muted">${esc(s.site)}</div></td>
+    ss.map((s, idx) => `<tr><td><button class="btn ghost sm r-attAny" data-ve="${idx}">✎ Edit</button>${s.edited ? '<div><span class="pill warn">edited</span></div>' : ''}</td><td>${esc(s.date)}</td><td>${esc(s.name)}</td><td>${esc(s.client)}<div class="muted">${esc(s.site)}</div></td>
       <td>${esc(s.inTime)}</td><td>${s.outTime ? esc(s.outTime) : '<span class="pill bad">—</span>'}</td><td>${s.hours ? Number(s.hours).toFixed(2) : ''}</td>
       <td>${fence(s.inFence)} ${fence(s.outFence)}</td>
       <td>${s.workArea?`<b>${esc(s.workArea)}</b><br>`:''}${esc(s.workDone)}${s.wpRef?`<div class="muted">WP: ${esc(s.wpRef)}</div>`:''}${s.pending?`<div class="muted">Pending: ${esc(s.pending)}</div>`:''}</td>
@@ -1031,12 +1222,16 @@ async function loadStaff(){
   try{ const r = await api('listStaff'); takeStaff(r); }catch(e){ handleErr(e); }
 }
 function takeStaff(r){
+  if (!$('stCat').options.length){
+    $('stCat').innerHTML = (r.staffCats || S.staffCats || ['Staff','Articled Assistant','Partner','Other']).map(c => `<option>${esc(c)}</option>`).join('');
+    $('stCat').onchange = stCatChanged; stCatChanged();
+  }
   S.allStaff = r.staff; S.staff = r.staff.filter(s => !s.reg || s.reg === 'Approved'); S.policyVersion = r.policyVersion;
   if (r.regCode !== undefined){ S.regCode = r.regCode; S.selfReg = r.selfReg; }
   renderStaff(); renderRegs();
 }
 function renderRegs(){
-  if (S.regCode === undefined){ show($('regCard'), false); return; }
+  if (!can('regApprove') && !can('regCode')){ show($('regCard'), false); return; }
   show($('regCard'), true);
   $('regState').innerHTML = S.selfReg ? '<span class="pill ok">ON</span>' : '<span class="pill bad">OFF</span>';
   $('regCodeShow').textContent = S.regCode || '—';
@@ -1052,8 +1247,8 @@ function renderRegs(){
         <div class="rgArt${s.category === 'Articled Assistant' ? '' : ' hidden'}"><label>Articleship start</label><input type="date" class="rgSt" value="${esc(s.artStartIso || '')}"></div></div>
       <div class="row rgArt${s.category === 'Articled Assistant' ? '' : ' hidden'}"><div><label>Scheme</label><select class="rgSc"><option value="New"${s.artScheme === 'Old' ? '' : ' selected'}>New Scheme</option><option value="Old"${s.artScheme === 'Old' ? ' selected' : ''}>Old Scheme</option></select></div>
         <div><label>Monthly stipend (₹)</label><input type="number" class="rgSp" inputmode="numeric"></div></div>
-      <label>Remark (needed to reject)</label><input class="rgRm" placeholder="e.g. Not an employee of the firm">
-      <div class="row" style="margin-top:8px"><button class="btn sm in" data-act="approve">✔ Approve</button><button class="btn ghost sm" data-act="reject" style="color:var(--red)">✖ Reject</button></div>
+      <div class="r-regApprove"><label>Remark (needed to reject)</label><input class="rgRm" placeholder="e.g. Not an employee of the firm"></div>
+      <div class="row r-regApprove" style="margin-top:8px"><button class="btn sm in" data-act="approve">✔ Approve</button><button class="btn ghost sm" data-act="reject" style="color:var(--red)">✖ Reject</button></div>
     </div>`).join('') : '<div class="muted">No registrations waiting.</div>';
   $('regList').querySelectorAll('.sitecard').forEach(card => {
     const q = c => card.querySelector(c);
@@ -1083,12 +1278,24 @@ $('regShare').onclick = async () => {
 };
 function renderStaff(){
   $('staffList').innerHTML = S.staff.length ? '<table><tr><th>ID</th><th>Name</th><th>Role / Category</th><th>Phone</th><th>Mobile</th><th>Status</th><th>Policy</th><th></th></tr>' +
-    S.staff.map((s,i) => `<tr><td>${esc(s.empCode)}</td><td>${esc(s.name)}</td><td>${esc(s.role)}<div class="muted">${esc(s.category || '')}</div></td>
+    S.staff.map((s,i) => `<tr><td>${esc(s.empCode)}</td><td>${esc(s.name)}</td><td>${rightsLabel(s)}<div class="muted">${esc(s.category || '')}</div></td>
       <td>${s.role === 'Admin' ? '<span class="muted">any</span>' : s.phoneLinked ? '<span class="pill ok">linked</span>' : '<span class="muted">not yet</span>'}</td><td>${esc(s.mobile)}</td>
       <td>${s.active ? '<span class="pill ok">Active</span>' : '<span class="pill bad">Inactive</span>'}</td>
       <td>${s.policyVersion && s.policyVersion === S.policyVersion ? `<span class="pill ok">Accepted</span><div class="muted">${esc(s.policyOn)}</div>` : '<span class="pill warn">Pending</span>'}</td>
-      <td><button class="btn ghost sm" data-edit="${i}">Edit</button></td></tr>`).join('') + '</table>' : 'No staff.';
+      <td>${s.role === 'Admin' && !(S.user && S.user.superAdmin) ? '<span class="muted">Super Admin only</span>' : `<button class="btn ghost sm r-staffForm" data-edit="${i}">Edit</button>`}</td></tr>`).join('') + '</table>' : 'No staff.';
   $('staffList').querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editStaff(S.staff[b.dataset.edit]));
+}
+function stRoleChanged(){
+  const role = $('stRole').value;
+  show($('stAdminNote'), role === 'Admin'); show($('stSuperNote'), role === 'Super Admin');
+  const cur = (S.allStaff || []).find(x => x.empCode === S.editing);
+  show($('stPresetBox'), !cur || cur.roleName !== 'Admin');
+}
+$('stRole').onchange = stRoleChanged;
+function rightsLabel(s){
+  if (s.superAdmin) return '<span class="pill ok">Super Admin</span><div class="muted">full access</div>';
+  if (s.role === 'Admin') return '<span class="pill">Admin</span><div class="muted">view-only</div>';
+  return esc(s.role);
 }
 function stCatChanged(){ const art = $('stCat').value === 'Articled Assistant'; show($('stArtBox1'), art); show($('stArtBox2'), art); }
 function editStaff(s){
@@ -1097,10 +1304,11 @@ function editStaff(s){
   $('stCat').value = s ? (s.category || 'Staff') : 'Staff'; $('stCat').onchange = stCatChanged;
   const ds = s && s.artStart ? s.artStart.split('-') : null; $('stArtStart').value = ds && ds.length === 3 ? `${ds[2]}-${ds[1]}-${ds[0]}` : '';
   $('stScheme').value = s && s.artScheme === 'Old' ? 'Old' : 'New'; $('stStipend').value = s ? s.stipend : '';
-  $('stReset').checked = false; show($('stResetBox'), !!(s && s.phoneLinked)); stCatChanged();
+  $('stReset').checked = false; show($('stResetBox'), !!(s && s.phoneLinked) && can('staffPhone')); stCatChanged();
   $('stTitle').textContent = s ? `Edit ${s.empCode}` : 'Add staff';
   $('stCode').value = s ? s.empCode : ''; $('stCode').disabled = !!s;
-  $('stName').value = s ? s.name : ''; $('stRole').value = s ? s.role : 'Staff';
+  $('stName').value = s ? s.name : ''; $('stRole').value = s ? (s.roleName || s.role) : 'Staff';
+  stRoleChanged();
   $('stMobile').value = s ? s.mobile : ''; $('stEmail').value = s ? (s.email || '') : ''; $('stActive').checked = s ? s.active : true; $('stPw').value = '';
   $('stPwLabel').textContent = s ? 'New password (leave blank to keep current)' : 'Password (min 6 characters)';
   show($('stCancel'), !!s);
@@ -1112,7 +1320,9 @@ $('stSave').onclick = async () => {
   busy(true);
   try{
     const r = await api('saveStaff', { empCode:$('stCode').value, name:$('stName').value, role:$('stRole').value,
-      mobile:$('stMobile').value, email:$('stEmail').value, password:$('stPw').value, active:$('stActive').checked, category:$('stCat').value,
+      mobile:$('stMobile').value, email:$('stEmail').value, password:$('stPw').value,
+      ...(($('stRole').value === 'Admin' && !((S.allStaff || []).find(x => x.empCode === S.editing && x.roleName === 'Admin'))) ? { rights:$('stPreset').value } : {}),
+      active:$('stActive').checked, category:$('stCat').value,
       artStart:$('stArtStart').value, artScheme:$('stScheme').value, stipend:$('stStipend').value, resetDevice:$('stReset').checked });
     takeStaff(r); editStaff(null); flash('✔ ' + r.message, 's');
   }catch(e){ handleErr(e); }
@@ -1146,8 +1356,8 @@ function drawSitesAdmin(){
       <div class="row"><div><label>Client</label><input class="rvClient" value="${esc(x.client)}"></div><div><label>Location / branch</label><input class="rvSite" value="${esc(x.site)}"></div></div>
       <div class="row"><div><label>Type</label><select class="rvType">${typeOpts}</select></div><div><label>Radius (m)</label><input class="rvRad" type="number" value="${x.radius}"></div>
         ${(S.firms || []).length > 1 ? `<div><label>Firm</label><select class="rvFirm">${firmOpts}</select></div>` : ''}</div>
-      <label>Remark (needed to reject or merge)</label><input class="rvRemark" placeholder="e.g. Same as ABC Ltd Andheri / not a client">
-      <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+      <div class="r-siteReview"><label>Remark (needed to reject or merge)</label><input class="rvRemark" placeholder="e.g. Same as ABC Ltd Andheri / not a client"></div>
+      <div class="row r-siteReview" style="margin-top:8px;flex-wrap:wrap;gap:6px">
         <button class="btn sm in" data-act="approve">✔ Approve</button>
         <select class="rvMerge" style="width:auto;flex:1">${near.length ? near.map(n => `<option value="${esc(n.a.id)}">${esc(n.a.client)} – ${esc(n.a.site)} (${n.d >= 1000 ? (n.d/1000).toFixed(1) + ' km' : n.d + ' m'})</option>`).join('') : '<option value="">No other sites</option>'}</select>
         <button class="btn ghost sm" data-act="merge">⇄ Merge into</button>
@@ -1181,7 +1391,7 @@ function drawSitesAdmin(){
       <td>${esc(x.site)}${x.addedBy ? `<div class="muted">by ${esc(x.addedBy)}</div>` : ''}</td><td>${esc(x.type || '')}</td><td>${x.radius} m</td><td>${pill(x)}${x.remark ? `<div class="muted">${esc(x.remark)}</div>` : ''}</td>
       <td>${x.visits}${x.lastVisit ? `<div class="muted">last ${esc(x.lastVisit)}</div>` : ''}</td>
       <td><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${x.lat},${x.lng}">view</a></td>
-      <td>${x.active && x.status !== 'Rejected' && x.status !== 'Merged' && x.id !== 'OFFICE' ? `<button class="btn ghost sm" data-off="${esc(x.id)}">Deactivate</button>` : ''}</td></tr>`; }).join('') + '</table>'
+      <td>${x.active && x.status !== 'Rejected' && x.status !== 'Merged' && x.id !== 'OFFICE' ? `<button class="btn ghost sm r-siteEdit" data-off="${esc(x.id)}">Deactivate</button>` : ''}</td></tr>`; }).join('') + '</table>'
     : '<div class="muted">No sites in this list.</div>';
   $('siteList').querySelectorAll('[data-off]').forEach(b => b.onclick = async () => {
     busy(true);
@@ -1344,7 +1554,7 @@ function renderExp(){
       Object.keys(byClient).sort().map(c => `<tr><td>${esc(c)}</td><td>${money(byClient[c])}</td></tr>`).join('') + '</table>' : '');
   $('xDetail').innerHTML = items.length ? '<table><tr><th><input type="checkbox" id="xAll" style="width:auto"></th><th></th><th>Date</th><th>Staff</th><th>Client</th><th>Category</th><th>Amount</th><th>Description</th><th>Bill</th><th>Status</th><th>Remark</th></tr>' +
     items.map((i, idx) => `<tr><td><input type="checkbox" class="xChk" value="${esc(i.id)}" style="width:auto"></td>
-      <td>${i.status === 'Paid' ? '' : `<button class="btn ghost sm" data-xe="${idx}">✎ Edit</button>`}${i.edited ? '<div><span class="pill warn">edited</span></div>' : ''}</td><td>${esc(i.date)}</td><td>${esc(i.name)}</td>
+      <td>${i.status === 'Paid' ? '' : `<button class="btn ghost sm r-expEdit" data-xe="${idx}">✎ Edit</button>`}${i.edited ? '<div><span class="pill warn">edited</span></div>' : ''}</td><td>${esc(i.date)}</td><td>${esc(i.name)}</td>
       <td>${esc(i.client)}</td><td>${esc(i.category)}${i.km ? `<div class="muted">${esc(i.km)} km</div>` : ''}</td><td><b>${money(i.amount)}</b></td>
       <td>${esc(i.description)}</td><td>${i.bill ? `<a href="${esc(i.bill)}" target="_blank" rel="noopener">View</a>` : '<span class="pill warn">none</span>'}</td>
       <td>${statusPill(i.status)}${i.by ? `<div class="muted">${esc(i.by)} ${esc(i.on)}</div>` : ''}</td><td>${esc(i.remark)}</td></tr>`).join('') + '</table>'
@@ -1744,7 +1954,7 @@ $('stXls').onclick = () => {
   if (!S.staff) return;
   xlsxDownload('Staff_list.xlsx', [{ name: 'Staff', title: 'STAFF LIST', meta: [],
     header: ['Emp Code','Name','Role','Category','Mobile','Email','Status','Phone','Articleship start','Scheme','Stipend (₹)','Policy version accepted','Policy accepted on'],
-    rows: S.staff.map(s => [s.empCode, s.name, s.role, s.category, s.mobile, s.email || '', s.active ? 'Active' : 'Inactive', s.role === 'Admin' ? 'any' : (s.phoneLinked ? 'linked' : 'not yet'), s.artStart, s.artScheme, s.stipend === '' ? '' : Number(s.stipend), s.policyVersion, s.policyOn]),
+    rows: S.staff.map(s => [s.empCode, s.name, (s.roleName || s.role) + (s.roleName === 'Admin' ? ' (view-only)' : ''), s.category, s.mobile, s.email || '', s.active ? 'Active' : 'Inactive', s.role === 'Admin' ? 'any' : (s.phoneLinked ? 'linked' : 'not yet'), s.artStart, s.artScheme, s.stipend === '' ? '' : Number(s.stipend), s.policyVersion, s.policyOn]),
     widths: [10,24,8,18,14,24,9,9,12,8,10,10,18] }]);
 };
 $('eXls').onclick = () => {
@@ -1992,7 +2202,7 @@ $('laXls').onclick = () => {
 function renderHolidays(list){
   S.holidays = list || [];
   $('hList').innerHTML = S.holidays.length ? '<table><tr><th>Date</th><th>Day</th><th>Holiday</th><th></th></tr>' + S.holidays.map(h =>
-    `<tr><td>${esc(h.date)}</td><td>${esc(h.day)}</td><td>${esc(h.name)}</td><td><button class="btn ghost sm" data-hd="${esc(h.iso)}">Remove</button></td></tr>`).join('') + '</table>'
+    `<tr><td>${esc(h.date)}</td><td>${esc(h.day)}</td><td>${esc(h.name)}</td><td><button class="btn ghost sm r-holidays" data-hd="${esc(h.iso)}">Remove</button></td></tr>`).join('') + '</table>'
     : '<div class="muted">No holidays entered for this year.</div>';
   $('hList').querySelectorAll('[data-hd]').forEach(b => b.onclick = async () => {
     busy(true); try{ const r = await api('deleteHoliday', { date:b.dataset.hd }); renderHolidays(r.holidays); flash('✔ ' + r.message, 's'); }catch(e){ handleErr(e); } finally{ busy(false); }
