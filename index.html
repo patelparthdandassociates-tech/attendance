@@ -89,23 +89,23 @@
   .sitecard{border:1px solid #e3e8ef;border-radius:10px;padding:10px;margin-bottom:10px}
   #policyView .ptext{white-space:pre-line;font-size:14px;line-height:1.55;background:#f6f8fb;border-radius:10px;padding:12px;max-height:55vh;overflow:auto}
   /* ---------- printable reports ---------- */
-  #printArea{background:#fff;color:#000;font-size:12px;font-family:'Bookman Old Style','Bookman','URW Bookman','BookmanWeb',Georgia,serif}
-  #printArea .lh{display:flex;gap:12px;align-items:center;border-bottom:3px solid #c9a227;padding-bottom:8px;margin-bottom:10px}
-  #printArea .lh img{height:62px;width:auto;border-radius:0}
-  #printArea .lh .fn{font-size:20px;font-weight:800;color:#1f3864;letter-spacing:.4px}
-  #printArea .lh .ft{font-size:12px;color:#333}
-  #printArea h3{text-align:center;margin:6px 0 2px;font-size:15px;letter-spacing:.5px;color:#1f3864}
-  #printArea .meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin:8px 0;font-size:12px}
-  #printArea table{border-collapse:collapse;width:100%;font-size:11px;min-width:0!important}
-  #printArea th,#printArea td{border:1px solid #999;padding:4px 5px;position:static;min-width:0!important}
-  #printArea th{background:#e8edf5;color:#1f3864}
-  #printArea .num{text-align:right;white-space:nowrap}
-  #printArea .totrow td{font-weight:700;background:#f6f8fb}
-  #printArea .sig{display:flex;justify-content:space-between;gap:20px;margin-top:40px}
-  #printArea .sig > div{flex:1;text-align:center;font-size:11px}
-  #printArea .sigline{border-top:1px solid #000;padding-top:4px}
-  #printArea .signame{font-weight:700;margin-top:2px;min-height:14px}
-  #printArea .small{font-size:10px;color:#555;margin-top:12px}
+  #printArea,#myPrint{background:#fff;color:#000;font-size:12px;font-family:'Bookman Old Style','Bookman','URW Bookman','BookmanWeb',Georgia,serif}
+  #printArea .lh,#myPrint .lh{display:flex;gap:12px;align-items:center;border-bottom:3px solid #c9a227;padding-bottom:8px;margin-bottom:10px}
+  #printArea .lh img,#myPrint .lh img{height:62px;width:auto;border-radius:0}
+  #printArea .lh .fn,#myPrint .lh .fn{font-size:20px;font-weight:800;color:#1f3864;letter-spacing:.4px}
+  #printArea .lh .ft,#myPrint .lh .ft{font-size:12px;color:#333}
+  #printArea h3,#myPrint h3{text-align:center;margin:6px 0 2px;font-size:15px;letter-spacing:.5px;color:#1f3864}
+  #printArea .meta,#myPrint .meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin:8px 0;font-size:12px}
+  #printArea table,#myPrint table{border-collapse:collapse;width:100%;font-size:11px;min-width:0!important}
+  #printArea th,#printArea td,#myPrint th,#myPrint td{border:1px solid #999;padding:4px 5px;position:static;min-width:0!important}
+  #printArea th,#myPrint th{background:#e8edf5;color:#1f3864}
+  #printArea .num,#myPrint .num{text-align:right;white-space:nowrap}
+  #printArea .totrow td,#myPrint .totrow td{font-weight:700;background:#f6f8fb}
+  #printArea .sig,#myPrint .sig{display:flex;justify-content:space-between;gap:20px;margin-top:40px}
+  #printArea .sig > div,#myPrint .sig > div{flex:1;text-align:center;font-size:11px}
+  #printArea .sigline,#myPrint .sigline{border-top:1px solid #000;padding-top:4px}
+  #printArea .signame,#myPrint .signame{font-weight:700;margin-top:2px;min-height:14px}
+  #printArea .small,#myPrint .small{font-size:10px;color:#555;margin-top:12px}
   @media print{
     @page{size:A4;margin:12mm}
     body{background:#fff}
@@ -114,8 +114,11 @@
     main{padding:0;max-width:none}
     #pPreviewCard{box-shadow:none;padding:0;margin:0;border-radius:0}
     #pPreviewCard .scroll{overflow:visible;max-height:none}
-    #printArea tr{page-break-inside:avoid}
-    #printArea th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    #printArea tr,#myPrint tr{page-break-inside:avoid}
+    #myTab .noprint{display:none!important}
+    #myResCard{box-shadow:none;padding:0;margin:0;border-radius:0}
+    #myResCard .scroll{overflow:visible;max-height:none}
+    #printArea th,#myPrint th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   }
   .editcard{border:2px solid var(--amber)}
   .xbtn{background:#1e7145!important;color:#fff!important}
@@ -196,6 +199,7 @@
       <button data-tab="punchTab" class="active">Punch</button>
       <button data-tab="expTab">Expenses</button>
       <button data-tab="lvTab">Leave</button>
+      <button data-tab="myTab" class="hidden" id="myTabBtn">Reports</button>
       <button data-tab="accTab">Account</button>
       <button data-tab="adminTab" class="hidden" id="adminTabBtn">Admin</button>
     </div>
@@ -274,6 +278,19 @@
         <br><br>
         <button class="btn in" id="punchBtn">CHECK IN</button>
       </div>
+      <div class="card">
+        <div class="row"><h2 style="margin:0">Forgot to punch?</h2><button class="btn ghost sm" id="bdToggle" style="flex:0 0 auto">Request a back-dated visit</button></div>
+        <div id="bdForm" class="hidden">
+          <p class="muted">For a visit you did not punch at all. It is added to your attendance after a partner approves, marked “Back-dated”.</p>
+          <div class="row"><div><label>Date of visit</label><input type="date" id="bdDate"></div><div><label>Client site</label><select id="bdSite"></select></div></div>
+          <div class="row"><div><label>Check-in time</label><input type="time" id="bdIn"></div><div><label>Check-out time</label><input type="time" id="bdOut"></div></div>
+          <label>Work area (optional)</label><input id="bdArea" placeholder="e.g. Purchases, Fixed assets">
+          <label>Work done</label><input id="bdWork" placeholder="e.g. Vouching of purchase bills">
+          <label>Why was it not punched?</label><input id="bdReason" placeholder="e.g. Phone battery dead">
+          <br><br><button class="btn" id="bdSend">Send for approval</button>
+        </div>
+        <div id="bdMine" class="scroll" style="margin-top:10px"></div>
+      </div>
     </div>
 
     <!-- ---------- EXPENSES ---------- -->
@@ -335,6 +352,26 @@
     </div>
 
     <!-- ---------- MY ACCOUNT ---------- -->
+    <div id="myTab" class="hidden">
+      <div class="card noprint">
+        <h2>My reports</h2>
+        <p class="muted">Your own attendance and expenses only. You can look back to the start of the previous financial year.</p>
+        <div class="row" style="flex-wrap:wrap;gap:6px">
+          <button class="btn ghost sm" data-myq="tm">This month</button><button class="btn ghost sm" data-myq="lm">Last month</button>
+          <button class="btn ghost sm" data-myq="fy">This FY</button><button class="btn ghost sm" data-myq="pfy">Previous FY</button>
+        </div>
+        <div class="row"><div><label>From</label><input type="date" id="myFrom"></div><div><label>To</label><input type="date" id="myTo"></div></div>
+        <div class="row"><div><label>Client</label><select id="myClient"><option value="">All clients</option></select></div>
+          <div><label>Location</label><select id="mySite"><option value="">All locations</option></select></div></div>
+        <label>Show</label><select id="myKind"><option value="both">Attendance + expenses</option><option value="attendance">Attendance only</option><option value="expenses">Expenses only</option></select>
+        <br><br>
+        <div class="row"><button class="btn" id="myRun">Show report</button>
+          <button class="btn sm xbtn hidden" id="myXls" style="flex:0 0 auto">⬇ Excel</button>
+          <button class="btn ghost sm hidden" id="myPrintBtn" style="flex:0 0 auto">🖨 Print / PDF</button></div>
+      </div>
+      <div class="card hidden" id="myResCard"><div class="scroll"><div id="myPrint"></div></div></div>
+    </div>
+
     <div id="accTab" class="hidden">
       <div class="card"><h2>My last 20 punches</h2><div id="histList" class="muted">Loading…</div></div>
       <div class="card">
@@ -447,6 +484,20 @@
       </div>
 
       <div id="aReport" class="hidden">
+        <div class="card r-bdAny" id="bdAdminCard">
+          <h2>Back-dated visits</h2>
+          <div id="bdPending" class="muted">Loading…</div>
+          <div class="r-bdAdd subbox" style="margin-top:12px">
+            <b>Add a back-dated visit directly</b> <span class="muted">(e.g. staff called in)</span>
+            <div class="row"><div><label>Staff</label><select id="bdaEmp"></select></div><div><label>Date</label><input type="date" id="bdaDate"></div></div>
+            <label>Client site</label><select id="bdaSite"></select>
+            <div class="row"><div><label>Check-in</label><input type="time" id="bdaIn"></div><div><label>Check-out</label><input type="time" id="bdaOut"></div></div>
+            <label>Work done</label><input id="bdaWork">
+            <label>Reason (compulsory)</label><input id="bdaReason" placeholder="e.g. Staff called – phone not working">
+            <br><br><button class="btn sm" id="bdaSave">Add visit</button>
+          </div>
+          <details style="margin-top:10px"><summary class="muted">Recent decisions</summary><div id="bdRecent" class="scroll"></div></details>
+        </div>
         <div class="card">
           <h2>Attendance report</h2>
           <div class="row">
@@ -644,7 +695,7 @@
   </section>
   <div class="foot"><div class="credit">Prepared by <b>CA Parth Patel</b><br>in consultation with <b>CA Rishabh Vora</b> &amp; <b>CA Raman Shah</b></div>
   <div>© RAMAN S SHAH &amp; CO LLP, Chartered Accountants</div>
-  <div id="foot">App v3.0</div></div>
+  <div id="foot">App v3.2</div></div>
 </main>
 
 <div class="spinner hidden" id="spinner">Please wait…</div>
@@ -654,7 +705,7 @@
 /* ========= CONFIG: your Apps Script Web App URL (ends with /exec) ========= */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNxOBL1h0AVLOfF6x1uAMLpDxzfzD3yAmJ57hT1DIrEyKhtz7F-oDQycnq-PXIYwID/exec';
 /* ========================================================================= */
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.2';
 
 const $ = id => document.getElementById(id);
 const DEVICE_ID = (() => {
@@ -730,6 +781,7 @@ function startSession(r){
   show($('loginView'), false); show($('appView'), true); show($('logoutBtn'), true);
   show($('adminTabBtn'), r.user.role === 'Admin');
   applyRights(r);
+  show($('myTabBtn'), r.myReports !== undefined ? !!r.myReports : false);
   S.missedOut = r.missedOut || []; S.email = r.email || '';
   $('myEmail').value = S.email; show($('emailNudge'), r.user.role !== 'Admin' && r.missedOut !== undefined && !S.email);
   renderMissed();
@@ -797,7 +849,8 @@ $('logoutBtn').onclick = () => { store('att_token', null); stopCam(); location.r
 /* ---------------- TABS ---------------- */
 document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button[data-tab]').forEach(x => x.classList.toggle('active', x === b));
-  ['punchTab','expTab','lvTab','accTab','adminTab'].forEach(t => show($(t), t === b.dataset.tab));
+  ['punchTab','expTab','lvTab','myTab','accTab','adminTab'].forEach(t => show($(t), t === b.dataset.tab));
+  if (b.dataset.tab === 'myTab') initMy();
   if (b.dataset.tab === 'lvTab') initLeave();
   flash('');
   if (b.dataset.tab === 'accTab') loadHistory();
@@ -808,6 +861,7 @@ document.querySelectorAll('#adminSub button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#adminSub button').forEach(x => x.classList.toggle('active', x === b));
   ['aDash','aReport','aStaff','aSites','aExp','aPrint','aLeave','aAccess'].forEach(t => show($(t), t === b.dataset.sub));
   if (b.dataset.sub === 'aAccess') loadAccess();
+  if (b.dataset.sub === 'aReport' && can('bdAny')) loadBdAdmin();
   if (b.dataset.sub === 'aLeave') initAdminLeave();
   if (b.dataset.sub === 'aSites') renderFirms();
   if (b.dataset.sub === 'aDash') loadDash();
@@ -818,9 +872,174 @@ document.querySelectorAll('#adminSub button').forEach(b => b.onclick = () => {
   if (b.dataset.sub === 'aStaff') loadStaff();
   if (b.dataset.sub === 'aSites') renderSites();
 });
+/* ---------------- BACK-DATED VISITS ---------------- */
+function siteOpts(list){ return '<option value="">— Select client site —</option>' + (list || []).map(x => `<option value="${esc(x.id)}">${esc(x.client)} – ${esc(x.site)}</option>`).join(''); }
+$('bdToggle').onclick = async () => {
+  const open = $('bdForm').classList.contains('hidden'); show($('bdForm'), open);
+  if (open){ $('bdSite').innerHTML = siteOpts(S.sites); $('bdDate').max = todayISO(); if (!$('bdDate').value) $('bdDate').value = isoOf(new Date(Date.now() - 86400000)); loadMyBd(); }
+};
+function bdStatus(x){ return x.status === 'Approved' ? '<span class="pill ok">Approved</span>' : x.status === 'Rejected' ? '<span class="pill bad">Rejected</span>' : x.status === 'Pending' ? '<span class="pill warn">Pending</span>' : `<span class="pill">${esc(x.status)}</span>`; }
+async function loadMyBd(){
+  try{ const r = await api('myBackdates'); drawMyBd(r.items); }catch(e){ handleErr(e); }
+}
+function drawMyBd(items){
+  $('bdMine').innerHTML = items.length ? '<table><tr><th>Date</th><th>Client</th><th>Time</th><th>Status</th><th></th></tr>' + items.map(x =>
+    `<tr><td>${esc(x.date)}</td><td>${esc(x.client)} – ${esc(x.site)}</td><td>${esc(x.inTime)}–${esc(x.outTime)}</td><td>${bdStatus(x)}${x.remark ? `<div class="muted">${esc(x.remark)}</div>` : ''}</td>
+     <td>${x.status === 'Pending' ? `<button class="btn ghost sm" data-bdw="${esc(x.id)}">Withdraw</button>` : ''}</td></tr>`).join('') + '</table>' : '';
+  $('bdMine').querySelectorAll('[data-bdw]').forEach(b => b.onclick = async () => {
+    busy(true); try{ const r = await api('cancelBackdate', { id:b.dataset.bdw }); drawMyBd(r.items); flash('✔ ' + r.message, 's'); }catch(e){ handleErr(e); } finally{ busy(false); }
+  });
+}
+$('bdSend').onclick = async () => {
+  const v = id => $(id).value.trim();
+  if (!v('bdDate') || !v('bdSite') || !v('bdIn') || !v('bdOut')) return flash('Fill in the date, client site and both times.');
+  if (v('bdOut') <= v('bdIn')) return flash('Check-out time must be after check-in time.');
+  if (!v('bdWork')) return flash('Enter the work done.');
+  if (!v('bdReason')) return flash('Enter why the visit was not punched.');
+  busy(true);
+  try{
+    const r = await api('requestBackdate', { date:v('bdDate'), siteId:v('bdSite'), inTime:v('bdIn'), outTime:v('bdOut'), workArea:v('bdArea'), workDone:v('bdWork'), reason:v('bdReason') });
+    ['bdIn','bdOut','bdArea','bdWork','bdReason'].forEach(id => $(id).value = ''); drawMyBd(r.items); flash('✔ ' + r.message, 's');
+  }catch(e){ handleErr(e); } finally{ busy(false); }
+};
+async function loadBdAdmin(){
+  try{ const r = await api('listBackdates'); drawBdAdmin(r); }catch(e){ handleErr(e); }
+}
+function drawBdAdmin(r){
+  if (r.staff){ $('bdaEmp').innerHTML = '<option value="">— Select staff —</option>' + r.staff.map(x => `<option value="${esc(x.empCode)}">${esc(x.name)} (${esc(x.empCode)})</option>`).join(''); }
+  if (r.sites) $('bdaSite').innerHTML = siteOpts(r.sites);
+  $('bdaDate').max = todayISO();
+  $('bdPending').innerHTML = r.pending.length ? r.pending.map(x => `<div class="sitecard" data-bd="${esc(x.id)}">
+      <div><b>${esc(x.name)}</b> (${esc(x.empCode)}) · <b>${esc(x.date)}</b> · ${esc(x.inTime)}–${esc(x.outTime)} · ${esc(x.client)} – ${esc(x.site)}</div>
+      <div class="muted">Work: ${esc([x.workArea, x.workDone].filter(Boolean).join(' – '))}<br>Reason: ${esc(x.reason)} · requested ${esc(x.requestedOn)}</div>
+      <div class="r-bdApprove"><label>Remark (needed to reject)</label><input class="bdRm">
+      <div class="row" style="margin-top:8px"><button class="btn sm in" data-act="approve">✔ Approve</button><button class="btn ghost sm" data-act="reject" style="color:var(--red)">✖ Reject</button></div></div>
+    </div>`).join('') : '<div class="muted">No back-dated requests waiting.</div>';
+  $('bdPending').querySelectorAll('[data-bd]').forEach(card => card.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
+    const rm = card.querySelector('.bdRm').value.trim();
+    if (b.dataset.act === 'reject' && !rm) return flash('Enter the reason for rejecting.');
+    busy(true);
+    try{ const x = await api('reviewBackdate', { id:card.dataset.bd, decision:b.dataset.act, remark:rm }); drawBdAdmin(x); flash('✔ ' + x.message, 's'); }
+    catch(e){ handleErr(e); } finally{ busy(false); }
+  }));
+  $('bdRecent').innerHTML = r.recent.length ? '<table><tr><th>Date</th><th>Staff</th><th>Client</th><th>Time</th><th>Status</th><th>By</th></tr>' + r.recent.map(x =>
+    `<tr><td>${esc(x.date)}</td><td>${esc(x.name)}</td><td>${esc(x.client)}</td><td>${esc(x.inTime)}–${esc(x.outTime)}</td><td>${bdStatus(x)}</td><td>${esc(x.by)}</td></tr>`).join('') + '</table>' : '<div class="muted">None yet.</div>';
+}
+$('bdaSave').onclick = async () => {
+  const v = id => $(id).value.trim();
+  if (!v('bdaEmp') || !v('bdaDate') || !v('bdaSite') || !v('bdaIn') || !v('bdaOut')) return flash('Fill in staff, date, site and both times.');
+  if (!v('bdaWork') || !v('bdaReason')) return flash('Work done and reason are compulsory.');
+  busy(true);
+  try{
+    const r = await api('addBackdate', { empCode:v('bdaEmp'), date:v('bdaDate'), siteId:v('bdaSite'), inTime:v('bdaIn'), outTime:v('bdaOut'), workDone:v('bdaWork'), reason:v('bdaReason') });
+    ['bdaIn','bdaOut','bdaWork','bdaReason'].forEach(id => $(id).value = ''); drawBdAdmin(r); flash('✔ ' + r.message, 's');
+  }catch(e){ handleErr(e); } finally{ busy(false); }
+};
+
+/* ---------------- MY REPORTS (own data) ---------------- */
+let myReady = false, myData = null;
+const isoOf = d => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 10); };
+function myQuick(q){
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth(), fy = m >= 3 ? y : y - 1;
+  const r = q === 'tm' ? [new Date(y, m, 1), now] : q === 'lm' ? [new Date(y, m - 1, 1), new Date(y, m, 0)]
+          : q === 'fy' ? [new Date(fy, 3, 1), now] : [new Date(fy - 1, 3, 1), new Date(fy, 2, 31)];
+  $('myFrom').value = isoOf(r[0]); $('myTo').value = isoOf(r[1]);
+}
+document.querySelectorAll('[data-myq]').forEach(b => b.onclick = () => { myQuick(b.dataset.myq); runMy(); });
+async function initMy(){
+  if (myReady) return;
+  myReady = true; myQuick('tm');
+  await runMy(true);
+}
+function fillMyLists(){
+  const keep = $('myClient').value;
+  $('myClient').innerHTML = '<option value="">All clients</option>' + (S.myClients || []).map(c => `<option value="${esc(c.client)}">${esc(c.client)}</option>`).join('');
+  if ((S.myClients || []).some(c => c.client === keep)) $('myClient').value = keep;
+  fillMySites();
+}
+function fillMySites(){
+  const c = (S.myClients || []).find(x => x.client === $('myClient').value), keep = $('mySite').value;
+  $('mySite').innerHTML = '<option value="">All locations</option>' + (c ? c.locations.map(l => `<option value="${esc(l.siteId)}">${esc(l.location)}</option>`).join('') : '');
+  $('mySite').disabled = !c;
+  if (c && c.locations.some(l => l.siteId === keep)) $('mySite').value = keep;
+}
+$('myClient').onchange = () => { fillMySites(); };
+$('myRun').onclick = () => runMy();
+async function runMy(withLists){
+  busy(true);
+  try{
+    const r = await api('myReport', { from:$('myFrom').value, to:$('myTo').value, client:$('myClient').value, siteId:$('mySite').value,
+                                      kind:$('myKind').value, withLists: withLists || !S.myClients });
+    if (r.clients){ S.myClients = r.clients; fillMyLists(); }
+    $('myFrom').value = r.from; $('myTo').value = r.to; $('myFrom').min = r.minFrom; $('myTo').min = r.minFrom;
+    myData = r; $('myPrint').innerHTML = buildMyReport(r);
+    show($('myResCard'), true); show($('myXls'), true); show($('myPrintBtn'), true);
+    if (r.note) flash(r.note, 'i');
+  }catch(e){ handleErr(e); } finally{ busy(false); }
+}
+const dmy = iso => iso.split('-').reverse().join('-');
+function buildMyReport(r){
+  const cl = $('myClient').value, loc = $('mySite').selectedOptions[0] && $('mySite').value ? $('mySite').selectedOptions[0].textContent : '';
+  let h = letterhead('MY ATTENDANCE & EXPENSE REPORT', `<b>${esc(r.name)}</b> (${esc(r.empCode)})<br>Period: ${dmy(r.from)} to ${dmy(r.to)}`,
+                     `Client: ${esc(cl || 'All')}<br>Location: ${esc(loc || 'All')}`);
+  if (r.attendance){
+    const t = r.attTotals;
+    h += `<h4 style="margin:12px 0 4px">A. Attendance – ${t.days} day(s), ${t.visits} visit(s), ${t.hours.toFixed(2)} hours</h4>`;
+    if (r.attByClient.length > 1) h += '<table><tr><th>Client</th><th class="num">Days</th><th class="num">Visits</th><th class="num">Hours</th></tr>' +
+      r.attByClient.map(b => `<tr><td>${esc(b.client)}</td><td class="num">${b.days}</td><td class="num">${b.visits}</td><td class="num">${b.hours.toFixed(2)}</td></tr>`).join('') +
+      `<tr class="totrow"><td>Total</td><td class="num">${t.days}</td><td class="num">${t.visits}</td><td class="num">${t.hours.toFixed(2)}</td></tr></table><br>`;
+    h += r.attendance.length ? '<table><tr><th>Sr</th><th>Date</th><th>Client</th><th>Location</th><th>In</th><th>Out</th><th class="num">Hours</th><th>Work done</th><th>Notes</th></tr>' +
+      r.attendance.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.date)}</td><td>${esc(x.client)}</td><td>${esc(x.location)}</td><td>${esc(x.inTime)}</td><td>${esc(x.outTime)}</td>
+        <td class="num">${(Number(x.hours) || 0).toFixed(2)}</td><td>${esc([x.workArea, x.workDone].filter(Boolean).join(' – '))}</td>
+        <td>${esc([x.inFence === 'No' || x.outFence === 'No' ? 'Outside site area' : '', x.flags, x.edited ? 'Corrected by admin' : ''].filter(Boolean).join('; '))}</td></tr>`).join('') +
+      `<tr class="totrow"><td colspan="6">Total</td><td class="num">${t.hours.toFixed(2)}</td><td colspan="2"></td></tr></table>` : '<p class="muted">No attendance in this period.</p>';
+  }
+  if (r.expenses){
+    const t = r.expTotals;
+    h += `<h4 style="margin:16px 0 4px">${r.attendance ? 'B. ' : ''}Expenses – ${t.count} claim(s), ₹${amt(t.claimed)} claimed</h4>
+      <div class="meta"><div>Approved ₹${amt(t.Approved)} · Paid ₹${amt(t.Paid)}</div><div>Pending ₹${amt(t.Pending)} · Rejected ₹${amt(t.Rejected)}</div></div>`;
+    if (r.expByClient.length > 1) h += '<table><tr><th>Client</th><th class="num">Claims</th><th class="num">Claimed</th><th class="num">Approved</th><th class="num">Paid</th><th class="num">Pending</th><th class="num">Rejected</th></tr>' +
+      r.expByClient.map(b => `<tr><td>${esc(b.client)}</td><td class="num">${b.count}</td><td class="num">${amt(b.claimed)}</td><td class="num">${amt(b.Approved)}</td><td class="num">${amt(b.Paid)}</td><td class="num">${amt(b.Pending)}</td><td class="num">${amt(b.Rejected)}</td></tr>`).join('') + '</table><br>';
+    h += r.expenses.length ? '<table><tr><th>Sr</th><th>Date</th><th>Client</th><th>Location</th><th>Category</th><th>Description</th><th class="num">Amount</th><th>Status</th><th>Remark</th><th>Bill</th></tr>' +
+      r.expenses.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.date)}</td><td>${esc(x.client)}</td><td>${esc(x.location)}</td><td>${esc(x.category)}</td><td>${esc(x.description)}${x.km ? ` (${esc(x.km)} km)` : ''}</td>
+        <td class="num">${amt(x.amount)}</td><td>${esc(x.status)}</td><td>${esc(x.remark || '')}</td><td>${x.bill ? `<a href="${esc(x.bill)}" target="_blank" rel="noopener">View</a>` : ''}</td></tr>`).join('') +
+      `<tr class="totrow"><td colspan="6">Total</td><td class="num">${amt(t.claimed)}</td><td colspan="3"></td></tr></table>` : '<p class="muted">No expense claims in this period.</p>';
+  }
+  return h + '<p class="small">Cancelled visits are not shown. Amounts in ₹.</p>' + genLine(false);
+}
+$('myPrintBtn').onclick = () => {
+  $('pageSize').textContent = '@media print{@page{size:A4 landscape;margin:10mm}}';
+  try{ window.print(); }catch(e){ flash('Printing is not available in this browser. Open the app in Chrome.'); }
+  setTimeout(() => { $('pageSize').textContent = ''; }, 1500);
+};
+$('myXls').onclick = () => {
+  const r = myData; if (!r) return;
+  const meta = [`${r.name} (${r.empCode})`, `Period: ${dmy(r.from)} to ${dmy(r.to)}`, `Client: ${$('myClient').value || 'All'} · Location: ${$('mySite').value ? $('mySite').selectedOptions[0].textContent : 'All'}`];
+  const sheets = [];
+  if (r.attendance){
+    sheets.push({ name:'My attendance', title:'MY ATTENDANCE', meta,
+      header:['Sr','Date','Client','Location','In','Out','Hours','Work area','Work done','WP ref','Pending / queries','Outside site area','Flags','Corrected by admin'],
+      rows: r.attendance.map((x, i) => [i + 1, x.date, x.client, x.location, x.inTime, x.outTime, Number(x.hours) || 0, x.workArea || '', x.workDone || '', x.wpRef || '', x.pending || '',
+        x.inFence === 'No' || x.outFence === 'No' ? 'Yes' : '', x.flags || '', x.edited || '']),
+      total:{ label:'Total', col:6 }, numCols:[6], widths:[5,11,26,22,7,7,8,18,34,12,22,10,30,10] });
+    sheets.push({ name:'Attendance by client', title:'MY ATTENDANCE – CLIENT-WISE', meta,
+      header:['Client','Days','Visits','Hours'], rows: r.attByClient.map(b => [b.client, b.days, b.visits, b.hours]), total:{ label:'Total', col:3 }, numCols:[3], widths:[34,8,8,10] });
+  }
+  if (r.expenses){
+    sheets.push({ name:'My expenses', title:'MY EXPENSE CLAIMS', meta,
+      header:['Sr','Date','Client','Location','Category','Description','KM','Amount (₹)','Status','Remark','Bill link'],
+      rows: r.expenses.map((x, i) => [i + 1, x.date, x.client, x.location, x.category, x.description, x.km || '', x.amount, x.status, x.remark || '', x.bill || '']),
+      total:{ label:'Total', col:7 }, numCols:[7], widths:[5,11,26,22,24,34,6,12,10,24,30] });
+    sheets.push({ name:'Expenses by client', title:'MY EXPENSES – CLIENT-WISE', meta,
+      header:['Client','Claims','Claimed','Approved','Paid','Pending','Rejected'],
+      rows: r.expByClient.map(b => [b.client, b.count, b.claimed, b.Approved, b.Paid, b.Pending, b.Rejected]), total:{ label:'Total', col:2 }, numCols:[2,3,4,5,6], widths:[34,8,12,12,12,12,12] });
+  }
+  xlsxDownload(`My_report_${r.empCode}_${r.from}_to_${r.to}.xlsx`, sheets);
+};
+
 /* ---------------- ADMIN ACCESS (matrix) ---------------- */
 // Super Admin = everything. Admin = only the rights ticked for them. Staff = own records.
-const DERIVED = { attAny:['attEdit','attAddOut','attCancel'], expAppr:['expApprove','expApproveHigh'],
+const DERIVED = { bdAny:['bdApprove','bdAdd'], attAny:['attEdit','attAddOut','attCancel'], expAppr:['expApprove','expApproveHigh'],
                   staffForm:['staffAdd','staffEdit','staffPw','staffPhone','artEdit'], staffPwBox:['staffAdd','staffPw'], super:[] };
 function can(k){
   const u = S.user || {};
@@ -841,7 +1060,7 @@ function applyRights(r){
   keys.forEach(k => document.body.classList.toggle('no-' + k, !can(k)));
   document.body.classList.toggle('limited', r.user.role === 'Admin' && !S.user.superAdmin);
   const any = (...ks) => ks.some(can);
-  const tabOk = { aDash: any('dashboard'), aReport: any('attView','attXls','attEdit','attAddOut','attCancel'),
+  const tabOk = { aDash: any('dashboard'), aReport: any('attView','attXls','attEdit','attAddOut','attCancel','bdApprove','bdAdd'),
     aExp: any('expView','expApprove','expApproveHigh','expPaid','expEdit'), aLeave: any('leaveView','leaveApprove','holidays'),
     aPrint: any('rptAttSum','rptAttDet','rptVoucher','rptClient','rptLeave','artView','audit'),
     aStaff: any('staffView','staffForm','regApprove','regCode'), aSites: any('siteView','siteAdd','siteEdit','siteOffice','siteReview'),
@@ -1594,7 +1813,7 @@ async function loadDash(){
     const r = await api('dashboard'), c = r.counts; S.dash = r;
     $('dWhen').textContent = `${r.date} · ${r.time}`;
     const k = (n, t, alert) => `<div class="kpi${alert && n ? ' alert' : ''}"><b>${esc(n)}</b><span>${esc(t)}</span></div>`;
-    $('dKpis').innerHTML = k(c.present + ' / ' + c.staff, 'Punched today') + k(c.atClient, 'At client now') + k(c.notPunched, 'Not punched', true) + k(c.onLeave || 0, 'On leave') + k(c.pendingLeave || 0, 'Leave to approve', true) + k(c.pendingSites || 0, 'New sites to approve', true) + k(c.pendingReg || 0, 'New staff to approve', true) +
+    $('dKpis').innerHTML = k(c.present + ' / ' + c.staff, 'Punched today') + k(c.atClient, 'At client now') + k(c.notPunched, 'Not punched', true) + k(c.onLeave || 0, 'On leave') + k(c.pendingLeave || 0, 'Leave to approve', true) + k(c.pendingSites || 0, 'New sites to approve', true) + k(c.pendingBackdates || 0, 'Back-dated to approve', true) + k(c.pendingReg || 0, 'New staff to approve', true) +
       k(c.late, `Late (after ${r.lateAfter})`, true) + k(c.flagged, 'Flagged today', true) + k(c.policyPending, 'Policy pending', true) +
       k(c.pendingExp, 'Expenses to approve', true) + k(money(c.pendingAmt), 'Pending amount') + k(money(c.toPayAmt), `To pay (${c.toPay})`);
     const order = { 'At client': 0, 'Checked out': 1, 'On leave': 2, 'Holiday': 3, 'Not punched': 4 };
