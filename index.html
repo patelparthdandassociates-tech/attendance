@@ -162,6 +162,8 @@
   <section id="regView" class="card hidden">
     <h2>New employee registration</h2>
     <p class="muted">Fill in your details and choose a password. The partner will check and approve your registration, after which you can log in.</p>
+    <div id="rgFirmBox" class="hidden subbox" style="margin:8px 0;border:2px solid #1e7e34;background:#eef8f0">You are registering with<br><b id="rgFirmName" style="font-size:18px"></b>
+      <div class="muted">Not your firm? Do not continue – ask the office for the correct invitation.</div></div>
     <label>Full name (as per PAN / Aadhaar)</label><input id="rgName" autocomplete="name" placeholder="e.g. Karan Mehta">
     <div class="row">
       <div><label>Mobile</label><input id="rgMobile" inputmode="tel" autocomplete="tel" placeholder="10-digit mobile"></div>
@@ -178,7 +180,7 @@
       <input id="rgPw" type="password" autocomplete="new-password">
       <button type="button" class="btn ghost sm" id="rgShowPw" style="flex:0 0 auto">Show</button>
     </div>
-    <label>Firm joining code (ask the office)</label><input id="rgCode" autocapitalize="characters" placeholder="e.g. RSS4K7PQ">
+    <div id="rgCodeBox"><label>Firm joining code (ask the office)</label><input id="rgCode" autocapitalize="characters" placeholder="e.g. RSS4K7PQ"></div>
     <br><br>
     <button class="btn" id="rgSend">Send registration</button>
     <button class="btn ghost" id="rgBack" style="margin-top:8px">← Back to login</button>
@@ -208,6 +210,7 @@
     <div id="punchTab">
       <div class="qbanner hidden" id="qBanner"></div>
       <div id="missedBox"></div>
+      <div id="workBox"></div>
       <div class="card hidden warnbox" id="emailNudge">📧 Add your <b>email</b> in the <b>Account</b> tab to get reminders when you forget to check in or out.</div>
       <div class="card" id="statusCard"></div>
 
@@ -391,6 +394,8 @@
     <!-- ---------- ADMIN ---------- -->
     <div id="adminTab" class="hidden">
       <div class="card r-viewnote" style="background:#fff8e1;border:1px solid #e0a800">🔑 <b>Admin</b> – you can use only the steps the <b>Super Admin</b> has ticked for you. Ask the Super Admin for anything else.</div>
+      <div class="card hidden" id="firmBar" style="padding:10px 14px;border:1px solid #2f5d9e"><div class="row" style="align-items:center"><div style="flex:0 0 auto"><b>🏢 Firm</b></div><div><select id="admFirm"></select></div></div>
+        <div class="muted" style="margin-top:4px">All lists, reports and approvals below show only the chosen firm.</div></div>
       <div class="tabs" id="adminSub">
         <button data-sub="aDash" class="active">Dashboard</button>
         <button data-sub="aReport">Attendance</button>
@@ -440,6 +445,8 @@
             <div><label>Date</label><input type="date" id="hDate"></div>
             <div><label>Holiday</label><input id="hName" placeholder="e.g. Diwali (Laxmi Pujan)"></div>
           </div>
+          <div class="r-holidays hidden" id="hFirmBox"><label>For</label><select id="hFirm"></select>
+            <div class="muted">“All firms” = common holiday (Super Admin only). A firm-only holiday applies only to staff whose home firm it is.</div></div>
           <br><div class="row"><button class="btn sm r-holidays" id="hAdd">Add holiday</button><button class="btn sm xbtn" id="hXls">⬇ Excel</button></div>
           <br><div class="scroll" id="hList"></div>
         </div>
@@ -595,7 +602,8 @@
           <h2>New registrations to approve</h2>
           <div id="regList" class="muted">Loading…</div>
           <div class="subbox r-regCode" style="margin-top:12px">
-            <div><b>Self-registration:</b> <span id="regState"></span> &nbsp; <b>Joining code:</b> <span id="regCodeShow" style="font-size:18px;letter-spacing:1px"></span></div>
+            <div><b>Self-registration:</b> <span id="regState"></span> &nbsp; <span id="regCodeOne"><b>Joining code:</b> <span id="regCodeShow" style="font-size:18px;letter-spacing:1px"></span></span></div>
+            <div id="regCodeMany" class="hidden" style="margin-top:6px"></div>
             <div class="muted">Give this code to new joiners with the app link. Make a new code when someone leaves or the code is shared outside.</div>
             <div class="row" style="margin-top:8px"><button class="btn ghost sm" id="regNewCode">↻ New joining code</button><button class="btn ghost sm" id="regToggle"></button><button class="btn ghost sm" id="regShare">📋 Copy invite message</button></div>
           </div>
@@ -603,7 +611,7 @@
         <div class="card r-staffForm">
           <h2 id="stTitle">Add staff</h2>
           <div class="row">
-            <div><label>Employee ID</label><input id="stCode" autocapitalize="characters" placeholder="EMP002"></div>
+            <div><label>Employee ID</label><input id="stCode" autocapitalize="characters" placeholder="blank = next ID"><div class="muted" id="stCodeHint"></div></div>
             <div><label>Name</label><input id="stName"></div>
           </div>
           <div class="row">
@@ -611,6 +619,8 @@
             <div><label>Mobile</label><input id="stMobile" inputmode="tel"></div>
           </div>
           <label>Email</label><input id="stEmail" type="email">
+          <div class="row hidden" id="stFirmBox"><div><label>Home firm</label><select id="stHome"></select></div>
+            <div><label>Also works for</label><div id="stAlso" style="padding-top:4px"></div></div></div>
           <div class="row">
             <div><label>Category</label><select id="stCat"></select></div>
             <div id="stArtBox1"><label>Articleship start</label><input type="date" id="stArtStart"></div>
@@ -639,7 +649,14 @@
         <div class="card">
           <div class="row"><h2 style="margin:0">🔑 Access matrix</h2><div style="text-align:right"><button class="btn sm xbtn" id="mxXls">⬇ Excel</button></div></div>
           <p class="muted">Tick what each Admin may do. Changes apply as soon as you tap <b>Save</b> – the Admin does not need to log out. Every tick / untick is written to the Audit Log. Super Admins always have everything; Staff only their own records.</p>
-          <div class="row"><div><label>Expense approval limit for “up to the limit” (₹)</label><input id="mxLimit" type="number" inputmode="numeric"></div><div></div></div>
+          <div id="mxFirmBox" class="hidden">
+            <h3 style="margin:10px 0 4px">🏢 Firms each Admin looks after</h3>
+            <div class="muted">An Admin sees and acts only for the firms ticked here.</div>
+            <div class="scroll" id="mxAF" style="margin-top:6px"></div>
+            <div class="row" style="margin-top:10px"><div><label>Show / change ticks for</label><select id="mxView"></select></div><div></div></div>
+            <div class="muted" id="mxViewHelp"></div>
+          </div>
+          <div class="row"><div><label id="mxLimitLbl">Expense approval limit for “up to the limit” (₹)</label><input id="mxLimit" type="number" inputmode="numeric"></div><div></div></div>
           <div class="scroll" id="mxGrid" style="max-height:70vh;margin-top:10px">Loading…</div>
           <div class="row" style="margin-top:10px"><button class="btn" id="mxSave">Save access</button><button class="btn ghost" id="mxReset" style="flex:0 0 auto">Undo unsaved changes</button></div>
           <div class="muted" style="margin-top:8px">Always Super Admin only (not in the grid): making Admins / Super Admins, editing or resetting an Admin, this matrix, firms &amp; letterheads, the Settings sheet. Nobody approves their own leave or expense claim.</div>
@@ -671,6 +688,30 @@
           <p class="muted">Staff can also punch at the office. Stand inside the office and tap the button to set its exact location.</p>
           <button class="btn sm" id="sOffice">📍 Set office location to where I am now</button>
         </div>
+        <div class="card hidden editcard" id="seCard">
+          <div class="row"><h2 style="margin:0">✎ Edit site <span id="seId" class="muted"></span></h2><button class="btn ghost sm" id="seClose" style="flex:0 0 auto">✕ Close</button></div>
+          <div class="row"><div><label>Client</label><input id="seClient"></div><div><label>Location / branch</label><input id="seSite"></div></div>
+          <div class="row"><div><label>Type of place</label><select id="seType"><option>Client office</option><option>Factory / Plant</option><option>Warehouse / Godown</option><option>Branch</option><option>Other</option></select></div>
+            <div><label>Radius (m)</label><input id="seRad" type="number" inputmode="numeric"></div></div>
+          <label>Address</label><input id="seAddr" placeholder="e.g. Unit 5, MIDC, Andheri East, Mumbai 400093">
+          <div class="row"><div><label>Contact person</label><input id="seContact"></div><div id="seFirmBox"><label>Firm</label><select id="seFirm"></select></div></div>
+          <div class="subbox" style="margin-top:12px">
+            <b>Map location</b>
+            <div class="muted" id="seNow"></div>
+            <div id="seHint"></div>
+            <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px">
+              <button class="btn ghost sm" id="seHere">📍 Use my current location</button>
+              <button class="btn ghost sm" id="seFind">🔎 Find from address</button>
+              <button class="btn ghost sm hidden" id="seStaff">👥 Use where staff punch</button>
+            </div>
+            <label>…or paste a Google Maps link / numbers (e.g. 19.1197, 72.8468)</label>
+            <div class="row"><input id="seLink" placeholder="https://maps.app.goo.gl/…  or  19.1197, 72.8468"><button class="btn ghost sm" id="seLinkBtn" style="flex:0 0 auto">Use</button></div>
+            <div id="seResults"></div>
+            <div id="seNew" style="margin-top:8px"></div>
+          </div>
+          <label>Reason for change (needed if the location moves 300 m or more)</label><input id="seReason" placeholder="e.g. Client shifted office / wrong pin when added">
+          <br><br><button class="btn" id="seSave">Save changes</button>
+        </div>
         <div class="card" id="pendSitesCard"><h2>New sites added by staff – to approve</h2><div id="pendSites" class="muted">Loading…</div></div>
         <div class="card">
           <div class="row"><h2 style="margin:0">All client sites</h2>
@@ -687,6 +728,8 @@
           <div class="row"><div><label>Tagline</label><input id="fTag" value="Chartered Accountants"></div><div><label>FRN</label><input id="fFrn"></div></div>
           <label>Address</label><input id="fAddr">
           <label>Phone / email</label><input id="fContact">
+          <label>Employee ID series (2–5 letters)</label><input id="fPrefix" autocapitalize="characters" maxlength="5" placeholder="e.g. RSV → RSV001, RSV002 …">
+          <div class="muted">Staff of this firm get IDs in this series. Leave blank for a new firm to use its initials. Existing IDs do not change.</div>
           <br><br><div class="row"><button class="btn sm" id="fSave">Add firm</button><button class="btn ghost sm hidden" id="fNew">New firm</button></div>
           </div>
         </div>
@@ -695,7 +738,7 @@
   </section>
   <div class="foot"><div class="credit">Prepared by <b>CA Parth Patel</b><br>in consultation with <b>CA Rishabh Vora</b> &amp; <b>CA Raman Shah</b></div>
   <div>© RAMAN S SHAH &amp; CO LLP, Chartered Accountants</div>
-  <div id="foot">App v3.2</div></div>
+  <div id="foot">App v3.4</div></div>
 </main>
 
 <div class="spinner hidden" id="spinner">Please wait…</div>
@@ -705,7 +748,7 @@
 /* ========= CONFIG: your Apps Script Web App URL (ends with /exec) ========= */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNxOBL1h0AVLOfF6x1uAMLpDxzfzD3yAmJ57hT1DIrEyKhtz7F-oDQycnq-PXIYwID/exec';
 /* ========================================================================= */
-const APP_VERSION = '3.2';
+const APP_VERSION = '4.2';
 
 const $ = id => document.getElementById(id);
 const DEVICE_ID = (() => {
@@ -719,6 +762,7 @@ function store(k, v){ try{ v === null ? localStorage.removeItem(k) : localStorag
 function load(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function show(el, yes){ el.classList.toggle('hidden', !yes); }
+function isHidden(el){ return !el || el.classList.contains('hidden'); }
 function flash(text, kind){ $('msg').innerHTML = text ? `<div class="msg ${kind||'e'}">${esc(text)}</div>` : ''; if (text) window.scrollTo({top:0,behavior:'smooth'}); }
 function busy(on){ show($('spinner'), on); }
 
@@ -729,7 +773,7 @@ async function api(action, data){
   if (!/\/exec$/.test(url)) throw new Error('[Error B] SCRIPT_URL must be the Web App URL ending with /exec.');
   let res, text;
   try {
-    res = await fetch(url, { method:'POST', body: JSON.stringify(Object.assign({ action, token:S.token, deviceId: DEVICE_ID }, data||{})) });
+    res = await fetch(url, { method:'POST', body: JSON.stringify(Object.assign({ action, token:S.token, deviceId: DEVICE_ID }, S.admFirm ? { viewFirm:S.admFirm } : {}, data||{})) });
     text = await res.text();
   } catch (e) {
     throw new Error('[Error C] Cannot reach the server.\n• Check the phone has internet.\n• In Apps Script the deployment must be "Execute as: Me" and "Who has access: Anyone".\n• Company Google Workspace accounts may block this – deploy from a personal Gmail account.');
@@ -783,6 +827,7 @@ function startSession(r){
   applyRights(r);
   show($('myTabBtn'), r.myReports !== undefined ? !!r.myReports : false);
   S.missedOut = r.missedOut || []; S.email = r.email || '';
+  S.workTodo = r.workTodo || []; S.workMin = r.workMin || 15; renderWork();
   $('myEmail').value = S.email; show($('emailNudge'), r.user.role !== 'Admin' && r.missedOut !== undefined && !S.email);
   renderMissed();
   $('foot').textContent = `App v${APP_VERSION} · Server v${r.version}`;
@@ -792,6 +837,23 @@ function startSession(r){
     show($('appView'), false); show($('policyView'), true); return;
   }
   renderPunch(); getLocation(); renderQueue(); syncQueue();
+}
+function renderWork(){
+  const list = S.workTodo || [];
+  $('workBox').innerHTML = list.map(w => `<div class="card warnbox" data-wk="${esc(w.outId)}">
+    <b>📝 Work details too short – ${esc(w.date)}</b> at <b>${esc(w.client)}</b> – ${esc(w.site)} (${esc(w.inTime)}–${esc(w.outTime)}).<br>
+    <span class="muted">You wrote: “${esc(w.workDone || '—')}”. Please describe what was done: procedure, period, sample, exceptions (at least ${S.workMin} letters). Shown to the partner as completed later.</span>
+    <label>Work area</label><input class="wkArea" value="${esc(w.workArea)}" placeholder="e.g. Purchases">
+    <label>Work done</label><textarea class="wkDone" placeholder="e.g. Vouching of purchase bills Apr–Jun, 40 samples, 2 without GRN">${esc(w.workDone)}</textarea>
+    <br><button class="btn sm" style="margin-top:8px">Save work details</button></div>`).join('');
+  $('workBox').querySelectorAll('[data-wk]').forEach(card => card.querySelector('button').onclick = async () => {
+    const wd = card.querySelector('.wkDone').value.trim();
+    if (wd.length < S.workMin) return flash(`Please describe the work done in more detail (at least ${S.workMin} letters).`);
+    busy(true);
+    try{ const r = await api('updateMyWork', { outId:card.dataset.wk, workArea:card.querySelector('.wkArea').value.trim(), workDone:wd });
+         S.workTodo = r.workTodo.filter(x => x.reason === 'short'); renderWork(); flash('✔ ' + r.message, 's'); }
+    catch(e){ handleErr(e); } finally{ busy(false); }
+  });
 }
 function renderMissed(){
   const list = S.missedOut || [];
@@ -1041,15 +1103,34 @@ $('myXls').onclick = () => {
 // Super Admin = everything. Admin = only the rights ticked for them. Staff = own records.
 const DERIVED = { bdAny:['bdApprove','bdAdd'], attAny:['attEdit','attAddOut','attCancel'], expAppr:['expApprove','expApproveHigh'],
                   staffForm:['staffAdd','staffEdit','staffPw','staffPhone','artEdit'], staffPwBox:['staffAdd','staffPw'], super:[] };
+function myFirmCodes(){ const u = S.user || {}; return u.superAdmin ? (S.firms || []).map(f => f.code) : (u.adminFirms && u.adminFirms.length ? u.adminFirms : [u.home || 'F1']); }
+/* Rights now in force: the chosen firm's ticks, or (All my firms) the ticks of any firm the Admin looks after */
+function rightsNow(){
+  const u = S.user || {}, fr = u.firmRights || {}, of = f => (fr[f] && fr[f].length !== undefined) ? fr[f] : (u.rights || []);
+  if (S.admFirm) return of(S.admFirm);
+  const all = []; myFirmCodes().forEach(f => of(f).forEach(x => { if (all.indexOf(x) < 0) all.push(x); })); return all;
+}
 function can(k){
   const u = S.user || {};
   if (u.superAdmin) return true;
   if (u.role !== 'Admin') return false;
-  if (DERIVED[k]) return DERIVED[k].some(x => (u.rights || []).indexOf(x) >= 0);
-  return (u.rights || []).indexOf(k) >= 0;
+  const r = rightsNow();
+  if (DERIVED[k]) return DERIVED[k].some(x => r.indexOf(x) >= 0);
+  return r.indexOf(k) >= 0;
 }
+function setupFirmBar(){
+  const m = myFirmCodes(), u = S.user || {};
+  show($('firmBar'), u.role === 'Admin' && m.length > 1);
+  if (m.indexOf(S.admFirm) < 0) S.admFirm = '';
+  $('admFirm').innerHTML = `<option value="">All my firms (${m.length})</option>` + m.map(c => `<option value="${esc(c)}">${esc(firmName(c) || c)}</option>`).join('');
+  $('admFirm').value = S.admFirm || '';
+}
+$('admFirm').onchange = () => {
+  S.admFirm = $('admFirm').value; S.staff = null; applyRights({ user:S.user });
+  const b = document.querySelector('#adminSub button.active:not(.hidden)'); if (b) b.click();
+};
 function applyRights(r){
-  S.user = r.user; if (r.rightsList) S.rightsList = r.rightsList; if (r.rightPresets) S.rightPresets = r.rightPresets;
+  S.user = r.user; setupFirmBar(); if (r.rightsList) S.rightsList = r.rightsList; if (r.rightPresets) S.rightPresets = r.rightPresets;
   if (r.expAdminLimit !== undefined) S.expLimit = r.expAdminLimit;
   // older server without rights: Super Admin = all, Admin = view
   if (r.user.role === 'Admin' && !r.user.rights) S.user = Object.assign({}, r.user, { rights: r.user.superAdmin ? null : [] });
@@ -1084,58 +1165,121 @@ function applyRights(r){
 /* Access matrix screen (Super Admin) */
 function loadAccess(){
   $('mxGrid').textContent = 'Loading…';
-  api('listStaff').then(r => { S.mx = { staff: r.staff, list: r.rightsList || S.rightsList, presets: r.rightPresets || S.rightPresets };
-    S.mxLimit = r.expAdminLimit; $('mxLimit').value = r.expAdminLimit; S.mxWork = {}; S.mx.staff.filter(x => x.roleName === 'Admin' && x.active).forEach(x => S.mxWork[x.empCode] = (x.rights || []).slice()); drawAccess(); })
+  api('listStaff', { viewFirm:'' }).then(r => {
+    S.mx = { staff: r.staff, list: r.rightsList || S.rightsList, presets: r.rightPresets || S.rightPresets, firms: r.firms || (S.firms || []).map(f => ({ code:f.code, name:f.name })) };
+    S.mxLimit = r.expAdminLimit; resetMxWork(); drawAccess(); })
     .catch(handleErr);
 }
+function resetMxWork(){
+  S.mxWork = {}; S.mxAF = {}; S.mxFR = {}; S.mxLim = {};
+  S.mx.staff.filter(x => x.roleName === 'Admin' && x.active).forEach(x => {
+    S.mxWork[x.empCode] = (x.rights || []).slice();
+    S.mxAF[x.empCode] = (x.adminFirms && x.adminFirms.length ? x.adminFirms : [x.home || 'F1']).slice();
+    const fr = x.firmRights || {}; S.mxFR[x.empCode] = {}; Object.keys(fr).forEach(f => { if (fr[f]) S.mxFR[x.empCode][f] = fr[f].slice(); });
+  });
+  (S.mx.firms || []).forEach(f => S.mxLim[f.code] = f.code === 'F1' ? S.mxLimit : (f.expLimit === '' || f.expLimit === undefined ? '' : f.expLimit));
+  if (S.mxView === undefined) S.mxView = '';
+}
+function mxMulti(){ return (S.mx.firms || []).length > 1; }
+function mxFirmName(c){ return ((S.mx.firms || []).find(f => f.code === c) || {}).name || c; }
 function drawAccess(){
-  const admins = S.mx.staff.filter(x => x.roleName === 'Admin' && x.active), supers = S.mx.staff.filter(x => x.superAdmin && x.active);
-  if (!admins.length){ $('mxGrid').innerHTML = '<div class="muted">No Admins yet. In the Staff tab, edit a person and set Role = Admin; they then appear here.</div>'; return; }
-  const orig = {}; admins.forEach(a => orig[a.empCode] = a.rights || []);
-  const presetSel = code => `<select data-preset="${esc(code)}"><option value="">Preset…</option><option value="view">View only</option><option value="partner">Partner</option><option value="manager">Office Manager</option><option value="accounts">Accounts</option><option value="all">All</option><option value="none">None</option>${admins.filter(a => a.empCode !== code).map(a => `<option value="copy:${esc(a.empCode)}">Copy from ${esc(a.name)}</option>`).join('')}</select>`;
+  const v = S.mxView || '', multi = mxMulti();
+  const allAdmins = S.mx.staff.filter(x => x.roleName === 'Admin' && x.active), supers = S.mx.staff.filter(x => x.superAdmin && x.active);
+  show($('mxFirmBox'), multi && allAdmins.length > 0);
+  if (!allAdmins.length){ $('mxGrid').innerHTML = '<div class="muted">No Admins yet. In the Staff tab, edit a person and set Role = Admin; they then appear here.</div>'; return; }
+  if (multi){
+    // firms each admin looks after
+    const fl = S.mx.firms;
+    $('mxAF').innerHTML = '<table class="mx"><tr><th>Admin</th>' + fl.map(f => `<th>${esc(f.name)}<br><span class="muted">${esc(f.code)}</span></th>`).join('') + '</tr>' +
+      allAdmins.map(a => { const o = a.adminFirms && a.adminFirms.length ? a.adminFirms : [a.home || 'F1'];
+        return `<tr><td>${esc(a.name)} <span class="muted">${esc(a.empCode)}</span></td>` + fl.map(f => { const on = S.mxAF[a.empCode].indexOf(f.code) >= 0, ch = on !== (o.indexOf(f.code) >= 0);
+          return `<td class="${ch ? 'changed' : ''}"><input type="checkbox" data-af="${esc(a.empCode)}" data-f="${esc(f.code)}"${on ? ' checked' : ''}></td>`; }).join('') + '</tr>'; }).join('') + '</table>';
+    $('mxAF').querySelectorAll('[data-af]').forEach(c => c.onchange = () => {
+      const w = S.mxAF[c.dataset.af], i = w.indexOf(c.dataset.f);
+      if (c.checked && i < 0) w.push(c.dataset.f);
+      if (!c.checked && i >= 0){ if (w.length === 1){ c.checked = true; return flash('An Admin must look after at least one firm.'); } w.splice(i, 1); }
+      drawAccess(); });
+    $('mxView').innerHTML = '<option value="">Normal ticks (used in every firm unless changed)</option>' + fl.map(f => `<option value="${esc(f.code)}">Changes for ${esc(f.name)} only</option>`).join('');
+    $('mxView').value = v;
+    $('mxViewHelp').innerHTML = v ? `Admins looking after <b>${esc(mxFirmName(v))}</b>. Untick <b>Same as normal</b> above a name to give different ticks in this firm only.` : 'These ticks apply in every firm the Admin looks after, unless you set different ticks for a firm.';
+  }
+  const limFirm = v || 'F1';
+  $('mxLimitLbl').textContent = 'Expense approval limit for “up to the limit” (₹)' + (multi ? ' – ' + mxFirmName(limFirm) : '');
+  if (document.activeElement !== $('mxLimit')) $('mxLimit').value = S.mxLim[limFirm] === undefined ? '' : S.mxLim[limFirm];
+  const admins = v ? allAdmins.filter(a => S.mxAF[a.empCode].indexOf(v) >= 0) : allAdmins;
+  if (!admins.length){ $('mxGrid').innerHTML = `<div class="muted">No Admin looks after ${esc(mxFirmName(v))} yet – tick it in the table above.</div>`; return; }
+  const origOf = a => { if (!v) return a.rights || []; const fr = (a.firmRights || {})[v]; return fr ? fr : null; };
+  const cur = code => v ? (S.mxFR[code][v] || null) : S.mxWork[code];
+  const eff = code => cur(code) || S.mxWork[code];
+  const presetSel = code => `<select data-preset="${esc(code)}"${v && !cur(code) ? ' disabled' : ''}><option value="">Preset…</option><option value="view">View only</option><option value="partner">Partner</option><option value="manager">Office Manager</option><option value="accounts">Accounts</option><option value="all">All</option><option value="none">None</option>${admins.filter(a => a.empCode !== code).map(a => `<option value="copy:${esc(a.empCode)}">Copy from ${esc(a.name)}</option>`).join('')}</select>`;
+  const lim = Number($('mxLimit').value || S.mxLim[limFirm] || S.mxLimit || 0).toLocaleString('en-IN');
   let html = '<table class="mx"><tr><th>Step / action</th>' + supers.map(x => `<th>${esc(x.name)}<br><span class="muted">Super Admin</span></th>`).join('') +
-    admins.map(a => `<th>${esc(a.name)}<br><span class="muted">${esc(a.empCode)} · <span data-cnt="${esc(a.empCode)}"></span></span><br>${presetSel(a.empCode)}</th>`).join('') + '<th>All</th></tr>';
+    admins.map(a => `<th>${esc(a.name)}<br><span class="muted">${esc(a.empCode)} · <span data-cnt="${esc(a.empCode)}"></span></span><br>` +
+      (v ? `<label style="font-weight:400;color:#1d2433;display:block"><input type="checkbox" data-same="${esc(a.empCode)}" style="width:auto"${cur(a.empCode) ? '' : ' checked'}> Same as normal</label>` : '') + presetSel(a.empCode) + '</th>').join('') + (v ? '' : '<th>All</th>') + '</tr>';
   let area = '';
   S.mx.list.forEach(rt => {
     if (rt[2] !== area){ area = rt[2]; html += `<tr class="area"><td colspan="${2 + supers.length + admins.length}">${esc(area)}</td></tr>`; }
-    const lbl = rt[0] === 'expApprove' ? `Approve / reject claims up to ₹${Number($('mxLimit').value || S.mxLimit || 0).toLocaleString('en-IN')}` : rt[0] === 'expApproveHigh' ? `Approve / reject claims above ₹${Number($('mxLimit').value || S.mxLimit || 0).toLocaleString('en-IN')}` : rt[1];
+    const lbl = rt[0] === 'expApprove' ? `Approve / reject claims up to ₹${lim}` : rt[0] === 'expApproveHigh' ? `Approve / reject claims above ₹${lim}` : rt[1];
     html += `<tr><td>${esc(lbl)}</td>` + supers.map(() => '<td>✔</td>').join('') +
-      admins.map(a => { const on = S.mxWork[a.empCode].indexOf(rt[0]) >= 0, ch = on !== (orig[a.empCode].indexOf(rt[0]) >= 0);
-        return `<td class="${ch ? 'changed' : ''}"><input type="checkbox" data-c="${esc(a.empCode)}" data-k="${esc(rt[0])}"${on ? ' checked' : ''}></td>`; }).join('') +
-      `<td><input type="checkbox" data-row="${esc(rt[0])}"${admins.every(a => S.mxWork[a.empCode].indexOf(rt[0]) >= 0) ? ' checked' : ''}></td></tr>`;
+      admins.map(a => { const e = eff(a.empCode), on = e.indexOf(rt[0]) >= 0, o = origOf(a) || (a.rights || []), locked = v && !cur(a.empCode);
+        const ch = on !== (o.indexOf(rt[0]) >= 0);
+        return `<td class="${ch ? 'changed' : ''}"${locked ? ' style="opacity:.45"' : ''}><input type="checkbox" data-c="${esc(a.empCode)}" data-k="${esc(rt[0])}"${on ? ' checked' : ''}${locked ? ' disabled' : ''}></td>`; }).join('') +
+      (v ? '' : `<td><input type="checkbox" data-row="${esc(rt[0])}"${admins.every(a => S.mxWork[a.empCode].indexOf(rt[0]) >= 0) ? ' checked' : ''}></td>`) + '</tr>';
   });
   $('mxGrid').innerHTML = html + '</table>';
-  admins.forEach(a => { const el = $('mxGrid').querySelector(`[data-cnt="${a.empCode}"]`); if (el) el.textContent = S.mxWork[a.empCode].length + ' ticks'; });
+  admins.forEach(a => { const el = $('mxGrid').querySelector(`[data-cnt="${a.empCode}"]`); if (el) el.textContent = eff(a.empCode).length + ' ticks'; });
   $('mxGrid').querySelectorAll('[data-c]').forEach(c => c.onchange = () => {
-    const w = S.mxWork[c.dataset.c]; const i = w.indexOf(c.dataset.k);
+    const w = cur(c.dataset.c); if (!w) return; const i = w.indexOf(c.dataset.k);
     if (c.checked && i < 0) w.push(c.dataset.k); if (!c.checked && i >= 0) w.splice(i, 1); drawAccess();
+  });
+  $('mxGrid').querySelectorAll('[data-same]').forEach(c => c.onchange = () => {
+    const code = c.dataset.same; if (c.checked) delete S.mxFR[code][v]; else S.mxFR[code][v] = S.mxWork[code].slice(); drawAccess();
   });
   $('mxGrid').querySelectorAll('[data-row]').forEach(c => c.onchange = () => {
     admins.forEach(a => { const w = S.mxWork[a.empCode], i = w.indexOf(c.dataset.row); if (c.checked && i < 0) w.push(c.dataset.row); if (!c.checked && i >= 0) w.splice(i, 1); }); drawAccess();
   });
   $('mxGrid').querySelectorAll('[data-preset]').forEach(sl => sl.onchange = () => {
-    const v = sl.value, code = sl.dataset.preset; if (!v) return;
-    S.mxWork[code] = v === 'all' ? S.mx.list.map(x => x[0]) : v === 'none' ? [] : v.indexOf('copy:') === 0 ? S.mxWork[v.slice(5)].slice() : (S.mx.presets[v] || []).slice();
+    const val = sl.value, code = sl.dataset.preset; if (!val) return;
+    const next = val === 'all' ? S.mx.list.map(x => x[0]) : val === 'none' ? [] : val.indexOf('copy:') === 0 ? eff(val.slice(5)).slice() : (S.mx.presets[val] || []).slice();
+    if (v) S.mxFR[code][v] = next; else S.mxWork[code] = next;
     drawAccess();
   });
 }
-$('mxLimit').oninput = () => { if (S.mx) drawAccess(); };
+$('mxView').onchange = () => { S.mxView = $('mxView').value; drawAccess(); };
+$('mxLimit').oninput = () => { if (!S.mx) return; S.mxLim[S.mxView || 'F1'] = $('mxLimit').value; drawAccess(); };
 $('mxReset').onclick = () => loadAccess();
 $('mxSave').onclick = async () => {
   busy(true);
   try{
-    const r = await api('setRights', { rights:S.mxWork, expLimit:$('mxLimit').value });
-    takeStaff(r); S.mx.staff = r.staff; S.mxLimit = r.expAdminLimit; S.mxWork = {}; r.staff.filter(x => x.roleName === 'Admin' && x.active).forEach(x => S.mxWork[x.empCode] = (x.rights || []).slice());
+    const data = { rights:S.mxWork, expLimit:S.mxLim.F1 !== undefined ? S.mxLim.F1 : $('mxLimit').value };
+    if (mxMulti()){
+      data.adminFirms = S.mxAF; data.firmRights = {}; data.expLimits = {};
+      S.mx.staff.filter(x => x.roleName === 'Admin' && x.active).forEach(a => { const o = {}; S.mx.firms.forEach(f => o[f.code] = S.mxFR[a.empCode][f.code] || null); data.firmRights[a.empCode] = o; });
+      S.mx.firms.forEach(f => { if (f.code !== 'F1' && S.mxLim[f.code] !== '' && S.mxLim[f.code] !== undefined) data.expLimits[f.code] = S.mxLim[f.code]; });
+    }
+    const r = await api('setRights', data);
+    takeStaff(r); S.mx.staff = r.staff; if (r.firms) S.mx.firms = r.firms; S.mxLimit = r.expAdminLimit; resetMxWork();
     drawAccess(); flash('✔ ' + r.message, 's');
   }catch(e){ handleErr(e); } finally{ busy(false); }
 };
 $('mxXls').onclick = () => {
   if (!S.mx) return;
   const admins = S.mx.staff.filter(x => x.roleName === 'Admin' && x.active), supers = S.mx.staff.filter(x => x.superAdmin && x.active);
-  xlsxDownload('Access_matrix_' + todayISO() + '.xlsx', [{ name:'Access matrix', title:'ACCESS MATRIX – ADMIN RIGHTS', meta:['As on ' + new Date().toLocaleDateString('en-IN') + ' · Expense limit ₹' + $('mxLimit').value],
+  const asOn = 'As on ' + new Date().toLocaleDateString('en-IN');
+  const sheets = [{ name:'Access matrix', title:'ACCESS MATRIX – ADMIN RIGHTS' + (mxMulti() ? ' (NORMAL TICKS)' : ''), meta:[asOn + ' · Expense limit ₹' + (S.mxLim.F1 !== undefined ? S.mxLim.F1 : $('mxLimit').value)],
     header:['Area','Step / action'].concat(supers.map(x => x.name + ' (Super Admin)'), admins.map(a => a.name + ' (' + a.empCode + ')')),
     rows: S.mx.list.map(rt => [rt[2], rt[1]].concat(supers.map(() => '✔'), admins.map(a => S.mxWork[a.empCode].indexOf(rt[0]) >= 0 ? '✔' : '✖'))),
-    widths:[18,46].concat(supers.map(() => 16), admins.map(() => 16)) }]);
+    widths:[18,46].concat(supers.map(() => 16), admins.map(() => 16)) }];
+  if (mxMulti()){
+    sheets.push({ name:'Firms per Admin', title:'FIRMS EACH ADMIN LOOKS AFTER', meta:[asOn], header:['Admin'].concat(S.mx.firms.map(f => f.name)),
+      rows: admins.map(a => [a.name + ' (' + a.empCode + ')'].concat(S.mx.firms.map(f => S.mxAF[a.empCode].indexOf(f.code) >= 0 ? '✔' : ''))), widths:[30].concat(S.mx.firms.map(() => 22)) });
+    S.mx.firms.forEach(f => { const ad = admins.filter(a => S.mxAF[a.empCode].indexOf(f.code) >= 0);
+      sheets.push({ name:('Rights ' + f.code).slice(0, 31), title:'RIGHTS IN FORCE – ' + f.name.toUpperCase(), meta:[asOn + ' · Expense limit ₹' + (S.mxLim[f.code] === '' || S.mxLim[f.code] === undefined ? S.mxLim.F1 : S.mxLim[f.code]), '* = different ticks for this firm'],
+        header:['Area','Step / action'].concat(ad.map(a => a.name + (S.mxFR[a.empCode][f.code] ? ' *' : ''))),
+        rows: S.mx.list.map(rt => [rt[2], rt[1]].concat(ad.map(a => (S.mxFR[a.empCode][f.code] || S.mxWork[a.empCode]).indexOf(rt[0]) >= 0 ? '✔' : '✖'))),
+        widths:[18,46].concat(ad.map(() => 18)) }); });
+  }
+  xlsxDownload('Access_matrix_' + todayISO() + '.xlsx', sheets);
 };
 function handleErr(e){ if (e.authError){ flash(e.message); setTimeout(() => location.reload(), 1500); } else flash(e.message); }
 
@@ -1343,6 +1487,7 @@ $('punchBtn').onclick = async () => {
     show($('selfiePreview'), false); show($('camBtn'), true); show($('retakeBtn'), false);
     renderPunch();
     flash('✔ ' + r.message + (type === 'OUT' ? '\n\nAny travel or other expenses today? Add them in the Expenses tab.' : ''), 's');
+    if (type === 'OUT') api('me').then(m => { if (m.workTodo){ S.workTodo = m.workTodo; renderWork(); } }).catch(() => {});
   }catch(e){ handleErr(e); }
   finally{ busy(false); }
 };
@@ -1446,20 +1591,38 @@ function takeStaff(r){
     $('stCat').onchange = stCatChanged; stCatChanged();
   }
   S.allStaff = r.staff; S.staff = r.staff.filter(s => !s.reg || s.reg === 'Approved'); S.policyVersion = r.policyVersion;
+  if (r.firms) S.stFirms = r.firms;
   if (r.regCode !== undefined){ S.regCode = r.regCode; S.selfReg = r.selfReg; }
-  renderStaff(); renderRegs();
+  renderStaff(); renderRegs(); if (!S.editing){ fillStaffFirms(null); codeHint(); }
 }
 function renderRegs(){
   if (!can('regApprove') && !can('regCode')){ show($('regCard'), false); return; }
   show($('regCard'), true);
   $('regState').innerHTML = S.selfReg ? '<span class="pill ok">ON</span>' : '<span class="pill bad">OFF</span>';
   $('regCodeShow').textContent = S.regCode || '—';
+  const fc = (S.stFirms || []).filter(f => f.joinCode !== undefined);
+  const many = (S.stFirms || []).length > 1;
+  show($('regCodeOne'), !many); show($('regCodeMany'), many); show($('regNewCode'), !many); show($('regShare'), !many);
+  if (many) $('regCodeMany').innerHTML = fc.length ? '<table><tr><th>Firm</th><th>Joining code</th><th></th></tr>' + fc.map(f => `<tr><td>${esc(f.name)}</td>
+      <td style="font-size:17px;letter-spacing:1px"><b>${esc(f.joinCode || '—')}</b></td><td><button class="btn ghost sm" data-nc="${esc(f.code)}">↻ New</button> <button class="btn ghost sm" data-sh="${esc(f.code)}">📋 Invite</button></td></tr>`).join('') + '</table>'
+      + '<div class="muted">Each firm has its own code – a new joiner is placed in the firm whose code they use.</div>'
+      + `<div class="subbox" style="margin-top:8px"><b>✉ Send invitation</b><div class="row" style="margin-top:6px"><div><label>Register under which firm?</label><select id="invFirm">${fc.filter(f => f.joinCode).map(f => `<option value="${esc(f.code)}"${f.code === S.admFirm ? ' selected' : ''}>${esc(f.name)}</option>`).join('')}</select></div></div>
+         <div class="row" style="margin-top:6px"><button class="btn sm" id="invWa">🟢 Send on WhatsApp</button><button class="btn ghost sm" id="invCopy">📋 Copy invitation</button></div>
+         <div class="muted" id="invNote" style="margin-top:4px"></div></div>` : '';
+  $('regCodeMany').querySelectorAll('[data-nc]').forEach(b => b.onclick = () => regSetting({ newCode:true, firm:b.dataset.nc }));
+  $('regCodeMany').querySelectorAll('[data-sh]').forEach(b => b.onclick = () => { const f = fc.find(x => x.code === b.dataset.sh); copyInvite(f.name, f.joinCode); });
+  if ($('invFirm')){ const pick = () => fc.find(x => x.code === $('invFirm').value) || {};
+    const note = () => { const f = pick(); $('invNote').innerHTML = f.name ? `The link opens the registration form set for <b>${esc(f.name)}</b>${/\.$/.test(f.name) ? '' : '.'} The joiner cannot choose another firm.` : ''; };
+    $('invFirm').onchange = note; note();
+    $('invCopy').onclick = () => { const f = pick(); copyInvite(f.name, f.joinCode); };
+    $('invWa').onclick = () => { const f = pick(); if (!S.selfReg) return flash('Self-registration is OFF. Tap Turn ON first.'); window.open('https://wa.me/?text=' + encodeURIComponent(inviteText(f.name, f.joinCode)), '_blank'); }; }
   $('regToggle').textContent = S.selfReg ? 'Turn OFF' : 'Turn ON';
   const pend = (S.allStaff || []).filter(s => s.reg === 'Pending');
   const cats = (S.staffCats || ['Staff','Articled Assistant','Partner','Other']).filter(c => c !== 'Partner');
   $('regList').innerHTML = pend.length ? pend.map(s => `<div class="sitecard" data-code="${esc(s.empCode)}">
       <div><b>${esc(s.name)}</b> · registered ${esc(s.regOn)}</div>
       <div class="muted">📱 ${esc(s.mobile)} · ✉ ${esc(s.email)}</div>
+      ${(S.stFirms || []).length > 1 ? `<label>Firm (from joining code)</label><select class="rgFm">${(S.stFirms || []).filter(f => f.mine || f.code === s.home).map(f => `<option value="${esc(f.code)}"${f.code === (s.home || 'F1') ? ' selected' : ''}${f.mine ? '' : ' disabled'}>${esc(f.name)}</option>`).join('')}</select>` : ''}
       <div class="row"><div><label>Employee ID</label><input class="rgId" value="${esc(s.empCode)}" autocapitalize="characters"></div>
         <div><label>Name</label><input class="rgNm" value="${esc(s.name)}"></div></div>
       <div class="row"><div><label>Category</label><select class="rgCt">${cats.map(c => `<option${c === s.category ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
@@ -1472,11 +1635,14 @@ function renderRegs(){
   $('regList').querySelectorAll('.sitecard').forEach(card => {
     const q = c => card.querySelector(c);
     q('.rgCt').onchange = () => card.querySelectorAll('.rgArt').forEach(x => show(x, q('.rgCt').value === 'Articled Assistant'));
+    if (q('.rgFm')){ const orig = q('.rgId').value, of = q('.rgFm').value;
+      q('.rgFm').onchange = () => { const f = (S.stFirms || []).find(x => x.code === q('.rgFm').value);
+        q('.rgId').value = q('.rgFm').value === of ? orig : (f && f.nextCode) || orig; }; }
     card.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
       const act = b.dataset.act, body = { empCode:card.dataset.code, decision:act, remark:q('.rgRm').value };
       if (act === 'reject' && !body.remark.trim()) return flash('Enter the reason for rejecting.');
       if (act === 'approve') Object.assign(body, { newCode:q('.rgId').value, name:q('.rgNm').value, category:q('.rgCt').value,
-                                                   artStart:q('.rgSt').value, artScheme:q('.rgSc').value, stipend:q('.rgSp').value });
+                                                   artStart:q('.rgSt').value, artScheme:q('.rgSc').value, stipend:q('.rgSp').value, ...(q('.rgFm') ? { home:q('.rgFm').value } : {}) });
       busy(true);
       try{ const r = await api('reviewRegistration', body); takeStaff(r); flash('✔ ' + r.message, 's'); }
       catch(e){ handleErr(e); } finally{ busy(false); }
@@ -1490,14 +1656,19 @@ async function regSetting(data){
 }
 $('regNewCode').onclick = () => regSetting({ newCode:true });
 $('regToggle').onclick = () => regSetting({ enabled:!S.selfReg });
-$('regShare').onclick = async () => {
-  const txt = `Welcome to ${S.firm && S.firm.name || 'the firm'}!\nPlease register on our staff attendance app:\n1. Open ${location.href.split('#')[0]}\n2. Tap "New employee? Register here"\n3. Fill in your details. Firm joining code: ${S.regCode}\nYou can log in once a partner approves your registration.`;
+$('regShare').onclick = () => copyInvite(S.firm && S.firm.name, S.regCode);
+function inviteText(firm, code){
+  const link = location.origin + location.pathname + '?join=' + encodeURIComponent(code || '');
+  return `Welcome to ${firm || 'the firm'}!\nPlease register on our staff attendance app – tap this link:\n${link}\nThe form opens for *${firm || 'our firm'}*. Fill in your details and choose a password.\n(Firm joining code, if asked: ${code})\nYou can log in once a partner approves your registration.`;
+}
+async function copyInvite(firm, code){
+  const txt = inviteText(firm, code);
   try{ await navigator.clipboard.writeText(txt); flash('✔ Invite message copied. Paste it in WhatsApp or email.', 's'); }
   catch(e){ flash(txt, 'i'); }
 };
 function renderStaff(){
   $('staffList').innerHTML = S.staff.length ? '<table><tr><th>ID</th><th>Name</th><th>Role / Category</th><th>Phone</th><th>Mobile</th><th>Status</th><th>Policy</th><th></th></tr>' +
-    S.staff.map((s,i) => `<tr><td>${esc(s.empCode)}</td><td>${esc(s.name)}</td><td>${rightsLabel(s)}<div class="muted">${esc(s.category || '')}</div></td>
+    S.staff.map((s,i) => `<tr><td>${esc(s.empCode)}</td><td>${esc(s.name)}${(S.firms || []).length > 1 ? `<div class="muted">🏢 ${esc(s.home || 'F1')}${(s.also || []).length ? ' + ' + esc(s.also.join(', ')) : ''}</div>` : ''}</td><td>${rightsLabel(s)}<div class="muted">${esc(s.category || '')}</div></td>
       <td>${s.role === 'Admin' ? '<span class="muted">any</span>' : s.phoneLinked ? '<span class="pill ok">linked</span>' : '<span class="muted">not yet</span>'}</td><td>${esc(s.mobile)}</td>
       <td>${s.active ? '<span class="pill ok">Active</span>' : '<span class="pill bad">Inactive</span>'}</td>
       <td>${s.policyVersion && s.policyVersion === S.policyVersion ? `<span class="pill ok">Accepted</span><div class="muted">${esc(s.policyOn)}</div>` : '<span class="pill warn">Pending</span>'}</td>
@@ -1513,7 +1684,7 @@ function stRoleChanged(){
 $('stRole').onchange = stRoleChanged;
 function rightsLabel(s){
   if (s.superAdmin) return '<span class="pill ok">Super Admin</span><div class="muted">full access</div>';
-  if (s.role === 'Admin') return '<span class="pill">Admin</span><div class="muted">view-only</div>';
+  if (s.role === 'Admin') return '<span class="pill">Admin</span><div class="muted">rights as ticked in 🔑 Access</div>';
   return esc(s.role);
 }
 function stCatChanged(){ const art = $('stCat').value === 'Articled Assistant'; show($('stArtBox1'), art); show($('stArtBox2'), art); }
@@ -1530,8 +1701,29 @@ function editStaff(s){
   stRoleChanged();
   $('stMobile').value = s ? s.mobile : ''; $('stEmail').value = s ? (s.email || '') : ''; $('stActive').checked = s ? s.active : true; $('stPw').value = '';
   $('stPwLabel').textContent = s ? 'New password (leave blank to keep current)' : 'Password (min 6 characters)';
+  fillStaffFirms(s); codeHint();
   show($('stCancel'), !!s);
   window.scrollTo({top:0,behavior:'smooth'});
+}
+/* Home firm + also-works-for (only when there is more than one firm) */
+function fillStaffFirms(s){
+  const fl = S.stFirms || (S.firms || []).map(f => ({ code:f.code, name:f.name, mine:true }));
+  show($('stFirmBox'), fl.length > 1);
+  if (fl.length < 2) return;
+  const mine = fl.filter(f => f.mine), home = s ? (s.home || 'F1') : (S.admFirm || (mine[0] || {}).code || 'F1');
+  $('stHome').innerHTML = fl.filter(f => f.mine || f.code === home).map(f => `<option value="${esc(f.code)}"${f.code === home ? ' selected' : ''}${f.mine ? '' : ' disabled'}>${esc(f.name)}</option>`).join('');
+  const also = s ? (s.also || []) : [];
+  const draw = () => { const h = $('stHome').value;
+    $('stAlso').innerHTML = fl.filter(f => f.code !== h).map(f => `<label style="display:block;color:#1d2433;font-weight:400"><input type="checkbox" class="stAl" value="${esc(f.code)}" style="width:auto"${also.indexOf(f.code) >= 0 ? ' checked' : ''}${f.mine ? '' : ' disabled'}> ${esc(f.name)}</label>`).join('') || '<span class="muted">—</span>'; };
+  $('stHome').onchange = () => { draw(); codeHint(); }; draw();
+}
+/* New staff: leave Employee ID blank to get the next ID of the home firm's series */
+function codeHint(){
+  const el = $('stCodeHint'); if (!el) return;
+  if (S.editing){ el.textContent = ''; return; }
+  const fl = S.stFirms || [], h = isHidden($('stFirmBox')) ? 'F1' : $('stHome').value, f = fl.find(x => x.code === h) || fl[0];
+  el.textContent = f && f.nextCode ? `Leave blank for ${f.nextCode}` : '';
+  $('stCode').placeholder = f && f.nextCode ? f.nextCode : 'EMP002';
 }
 $('stCancel').onclick = () => editStaff(null);
 $('stXls').insertAdjacentHTML('beforebegin', '');
@@ -1542,7 +1734,8 @@ $('stSave').onclick = async () => {
       mobile:$('stMobile').value, email:$('stEmail').value, password:$('stPw').value,
       ...(($('stRole').value === 'Admin' && !((S.allStaff || []).find(x => x.empCode === S.editing && x.roleName === 'Admin'))) ? { rights:$('stPreset').value } : {}),
       active:$('stActive').checked, category:$('stCat').value,
-      artStart:$('stArtStart').value, artScheme:$('stScheme').value, stipend:$('stStipend').value, resetDevice:$('stReset').checked });
+      artStart:$('stArtStart').value, artScheme:$('stScheme').value, stipend:$('stStipend').value, resetDevice:$('stReset').checked,
+      ...(isHidden($('stFirmBox')) ? {} : { home:$('stHome').value, also:[...document.querySelectorAll('.stAl:checked')].map(c => c.value) }) });
     takeStaff(r); editStaff(null); flash('✔ ' + r.message, 's');
   }catch(e){ handleErr(e); }
   finally{ busy(false); }
@@ -1609,8 +1802,9 @@ function drawSitesAdmin(){
       return `<tr><td>${esc(x.id)}</td><td>${same ? '<span class="muted">〃</span>' : `<b>${esc(x.client)}</b>`}${(S.firms || []).length > 1 && !same ? `<div class="muted">${esc(firmName(x.firm))}</div>` : ''}</td>
       <td>${esc(x.site)}${x.addedBy ? `<div class="muted">by ${esc(x.addedBy)}</div>` : ''}</td><td>${esc(x.type || '')}</td><td>${x.radius} m</td><td>${pill(x)}${x.remark ? `<div class="muted">${esc(x.remark)}</div>` : ''}</td>
       <td>${x.visits}${x.lastVisit ? `<div class="muted">last ${esc(x.lastVisit)}</div>` : ''}</td>
-      <td><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${x.lat},${x.lng}">view</a></td>
-      <td>${x.active && x.status !== 'Rejected' && x.status !== 'Merged' && x.id !== 'OFFICE' ? `<button class="btn ghost sm r-siteEdit" data-off="${esc(x.id)}">Deactivate</button>` : ''}</td></tr>`; }).join('') + '</table>'
+      <td><a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${x.lat},${x.lng}">view</a>${(x.punchGap !== undefined ? x.punchGap > x.radius : x.outsidePct >= 30) ? `<div class="pill warn" title="Based on recent punches">⚠ ${x.outsidePct || 0}% outside${x.punchGap ? ` · staff ~${x.punchGap} m away` : ''}</div>` : ''}</td>
+      <td>${(x.id === 'OFFICE' ? can('siteOffice') : can('siteEdit')) && x.status !== 'Merged' ? `<button class="btn ghost sm" data-se="${esc(x.id)}">✎ Edit</button>` : ''}
+        ${x.active && x.status !== 'Rejected' && x.status !== 'Merged' && x.id !== 'OFFICE' ? `<button class="btn ghost sm r-siteEdit" data-off="${esc(x.id)}">Deactivate</button>` : ''}</td></tr>`; }).join('') + '</table>'
     : '<div class="muted">No sites in this list.</div>';
   $('siteList').querySelectorAll('[data-off]').forEach(b => b.onclick = async () => {
     busy(true);
@@ -1618,6 +1812,60 @@ function drawSitesAdmin(){
     catch(e){ handleErr(e); } finally{ busy(false); }
   });
 }
+$('siteList').addEventListener('click', ev => { const b = ev.target.closest('[data-se]'); if (b) openSiteEdit(b.dataset.se); });
+let seNewLoc = null;
+function openSiteEdit(id){
+  const x = (S.allSites || []).find(y => y.id === id); if (!x) return;
+  S.seId = id; seNewLoc = null; $('seId').textContent = id;
+  $('seClient').value = x.client; $('seSite').value = x.site; $('seType').value = x.type || 'Client office'; $('seRad').value = x.radius;
+  $('seAddr').value = x.address || ''; $('seContact').value = x.contact || ''; $('seLink').value = ''; $('seReason').value = '';
+  $('seFirm').innerHTML = (S.firms || []).map(f => `<option value="${esc(f.code)}">${esc(f.name)}</option>`).join(''); $('seFirm').value = x.firm || 'F1';
+  show($('seFirmBox'), (S.firms || []).length > 1);
+  $('seNow').innerHTML = `Saved: ${Number(x.lat).toFixed(6)}, ${Number(x.lng).toFixed(6)} · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${x.lat},${x.lng}">open in Google Maps</a>`;
+  $('seHint').innerHTML = x.punchLat ? `<div class="${x.punchGap > x.radius ? 'warnbox subbox' : 'muted'}" style="margin-top:6px">Staff usually punch about <b>${x.punchGap} m</b> from the saved point (median of ${x.punchN} recent punches; ${x.outsidePct || 0}% marked outside).</div>` : '';
+  show($('seStaff'), !!x.punchLat);
+  $('seResults').innerHTML = ''; $('seNew').innerHTML = '';
+  show($('seCard'), true); $('seCard').scrollIntoView({ behavior:'smooth' });
+}
+function seSetLoc(lat, lng, label){
+  const x = (S.allSites || []).find(y => y.id === S.seId);
+  seNewLoc = { lat:Number(lat), lng:Number(lng) };
+  const d = Math.round(distM(x.lat, x.lng, seNewLoc.lat, seNewLoc.lng));
+  $('seNew').innerHTML = `<div class="subbox ${d >= 300 ? 'warnbox' : ''}"><b>New location:</b> ${seNewLoc.lat.toFixed(6)}, ${seNewLoc.lng.toFixed(6)} (${esc(label)}) – moves <b>${d >= 1000 ? (d/1000).toFixed(2) + ' km' : d + ' m'}</b> ·
+    <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${seNewLoc.lat},${seNewLoc.lng}">check on map</a> · <button class="linkbtn" id="seUndo">undo</button></div>`;
+  $('seUndo').onclick = () => { seNewLoc = null; $('seNew').innerHTML = ''; };
+}
+$('seClose').onclick = () => show($('seCard'), false);
+$('seHere').onclick = () => {
+  if (!navigator.geolocation) return flash('Location is not available on this device.');
+  busy(true);
+  navigator.geolocation.getCurrentPosition(p => { busy(false);
+    if (p.coords.accuracy > 60) flash(`GPS is weak (±${Math.round(p.coords.accuracy)} m). For an accurate site pin, stand at the client's entrance outdoors and try again.`, 'i');
+    seSetLoc(p.coords.latitude, p.coords.longitude, `your phone, ±${Math.round(p.coords.accuracy)} m`);
+  }, e => { busy(false); flash('Could not get your location. ' + (e.code === 1 ? locTips() : 'Turn on GPS and try again.')); }, { enableHighAccuracy:true, timeout:20000, maximumAge:0 });
+};
+$('seStaff').onclick = () => { const x = (S.allSites || []).find(y => y.id === S.seId); if (x && x.punchLat) seSetLoc(x.punchLat, x.punchLng, `where staff usually punch, ${x.punchN} punches`); };
+async function seSearch(q){
+  busy(true);
+  try{
+    const r = await api('findPlace', { query:q });
+    if (r.results.length === 1 && /link|numbers/.test(r.results[0].address)){ seSetLoc(r.results[0].lat, r.results[0].lng, 'from link'); $('seResults').innerHTML = ''; return; }
+    $('seResults').innerHTML = '<div class="muted" style="margin-top:8px">Pick the correct place:</div>' + r.results.map((x, i) =>
+      `<div style="margin-top:6px"><button class="btn ghost sm" data-pick="${i}">Use</button> ${esc(x.address)}${x.approx ? ' <span class="muted">(approximate)</span>' : ''} · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${x.lat},${x.lng}">map</a></div>`).join('');
+    $('seResults').querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { const x = r.results[Number(b.dataset.pick)]; seSetLoc(x.lat, x.lng, 'Google Maps: ' + x.address); $('seResults').innerHTML = ''; });
+  }catch(e){ handleErr(e); } finally{ busy(false); }
+}
+$('seFind').onclick = () => { const q = [$('seAddr').value.trim(), $('seClient').value.trim()].filter(Boolean)[0]; if (!q || q.length < 4) return flash('Type the address first, then tap Find from address.'); seSearch($('seAddr').value.trim() || ($('seClient').value.trim() + ' ' + $('seSite').value.trim())); };
+$('seLinkBtn').onclick = () => { const t = $('seLink').value.trim(); if (!t) return flash('Paste a Google Maps link or the numbers first.'); seSearch(t); };
+$('seSave').onclick = async () => {
+  const body = { siteId:S.seId, client:$('seClient').value, site:$('seSite').value, type:$('seType').value, radius:$('seRad').value,
+                 address:$('seAddr').value, contact:$('seContact').value, reason:$('seReason').value };
+  if ((S.firms || []).length > 1) body.firm = $('seFirm').value;
+  if (seNewLoc){ body.lat = seNewLoc.lat; body.lng = seNewLoc.lng; }
+  busy(true);
+  try{ const r = await api('editSite', body); S.allSites = r.all; S.sites = r.sites; drawSitesAdmin(); renderPunch(); show($('seCard'), false); flash('✔ ' + r.message, 's'); }
+  catch(e){ handleErr(e); } finally{ busy(false); }
+};
 $('siteFilter').onchange = drawSitesAdmin;
 $('siteXls').onclick = () => {
   const all = S.allSites || [];
@@ -1845,7 +2093,8 @@ async function loadPrintLists(){
     if (!S.staff || !S.staff.length){ const r = await api('listStaff'); S.staff = r.staff; S.policyVersion = r.policyVersion; }
     const cur = $('pStaff').value;
     fillSignatories();
-    const fcur = $('pFirm').value; $('pFirm').innerHTML = firmOptions(fcur || 'F1');
+    const fcur = S.admFirm || $('pFirm').value, mf = myFirmCodes();
+    $('pFirm').innerHTML = (S.firms || []).filter(f => mf.indexOf(f.code) >= 0).map(f => `<option value="${esc(f.code)}"${f.code === (fcur || mf[0]) ? ' selected' : ''}>${esc(f.name)}</option>`).join('');
     $('pStaff').innerHTML = S.staff.map(s => `<option value="${esc(s.empCode)}">${esc(s.name)} (${esc(s.empCode)})${s.active ? '' : ' – inactive'}</option>`).join('');
     if (cur) $('pStaff').value = cur;
   }catch(e){ handleErr(e); }
@@ -2388,7 +2637,7 @@ async function runLeave(){
   busy(true);
   try{
     const r = await api('listLeaves', { from:$('laFrom').value, to:$('laTo').value, filterEmp:$('laEmp').value, status:$('laStatus').value });
-    S.la = r; const cur = $('laEmp').value;
+    S.la = r; const cur = $('laEmp').value; if (r.holidaysYear) renderHolidays(r.holidaysYear);
     $('laEmp').innerHTML = '<option value="">All staff</option>' + r.staff.map(s => `<option value="${esc(s.empCode)}">${esc(s.name)} (${esc(s.empCode)})</option>`).join('');
     $('laEmp').value = cur;
     $('laList').innerHTML = r.items.length ? '<table><tr><th><input type="checkbox" id="laAll" style="width:auto"></th><th>Staff</th><th>From</th><th>To</th><th>Days</th><th>Type</th><th>Reason</th><th>Status</th><th>Remark</th></tr>' +
@@ -2419,41 +2668,48 @@ $('laXls').onclick = () => {
     total:{ label:'Total days', col:6 }, widths:[14,10,20,11,11,11,6,18,30,10,22,11,24], numCols:[] }]);
 };
 function renderHolidays(list){
-  S.holidays = list || [];
-  $('hList').innerHTML = S.holidays.length ? '<table><tr><th>Date</th><th>Day</th><th>Holiday</th><th></th></tr>' + S.holidays.map(h =>
-    `<tr><td>${esc(h.date)}</td><td>${esc(h.day)}</td><td>${esc(h.name)}</td><td><button class="btn ghost sm r-holidays" data-hd="${esc(h.iso)}">Remove</button></td></tr>`).join('') + '</table>'
+  const mf = myFirmCodes(), multi = (S.firms || []).length > 1;
+  S.holidays = (list || []).filter(h => !h.firm || mf.indexOf(h.firm) >= 0 || (S.user || {}).role !== 'Admin');
+  show($('hFirmBox'), multi);
+  if (multi){ const cur = $('hFirm').value;
+    $('hFirm').innerHTML = ((S.user || {}).superAdmin ? '<option value="">All firms (common holiday)</option>' : '') + mf.map(c => `<option value="${esc(c)}">${esc(firmName(c) || c)} only</option>`).join('');
+    if ([...$('hFirm').options].some(o => o.value === cur)) $('hFirm').value = cur; else if (S.admFirm) $('hFirm').value = S.admFirm; }
+  $('hList').innerHTML = S.holidays.length ? `<table><tr><th>Date</th><th>Day</th><th>Holiday</th>${multi ? '<th>Firm</th>' : ''}<th></th></tr>` + S.holidays.map(h =>
+    `<tr><td>${esc(h.date)}</td><td>${esc(h.day)}</td><td>${esc(h.name)}</td>${multi ? `<td>${h.firm ? esc(firmName(h.firm) || h.firm) : '<span class="muted">All firms</span>'}</td>` : ''}
+     <td>${!h.firm && multi && !(S.user || {}).superAdmin ? '' : `<button class="btn ghost sm r-holidays" data-hd="${esc(h.iso)}" data-hf="${esc(h.firm || '')}">Remove</button>`}</td></tr>`).join('') + '</table>'
     : '<div class="muted">No holidays entered for this year.</div>';
   $('hList').querySelectorAll('[data-hd]').forEach(b => b.onclick = async () => {
-    busy(true); try{ const r = await api('deleteHoliday', { date:b.dataset.hd }); renderHolidays(r.holidays); flash('✔ ' + r.message, 's'); }catch(e){ handleErr(e); } finally{ busy(false); }
+    busy(true); try{ const r = await api('deleteHoliday', { date:b.dataset.hd, firm:b.dataset.hf }); renderHolidays(r.holidays); flash('✔ ' + r.message, 's'); }catch(e){ handleErr(e); } finally{ busy(false); }
   });
 }
 $('hAdd').onclick = async () => {
   busy(true);
-  try{ const r = await api('saveHoliday', { date:$('hDate').value, name:$('hName').value }); $('hName').value = ''; renderHolidays(r.holidays); flash('✔ ' + r.message, 's'); }
+  try{ const r = await api('saveHoliday', { date:$('hDate').value, name:$('hName').value, firm: isHidden($('hFirmBox')) ? '' : $('hFirm').value }); $('hName').value = ''; renderHolidays(r.holidays); flash('✔ ' + r.message, 's'); }
   catch(e){ handleErr(e); } finally{ busy(false); }
 };
-$('hXls').onclick = () => xlsxDownload('Holidays.xlsx', [{ name:'Holidays', title:'FIRM HOLIDAYS', meta:[], header:['Date','Day','Holiday'],
-  rows: S.holidays.map(h => [h.date, h.day, h.name]), widths:[12,6,40] }]);
+$('hXls').onclick = () => xlsxDownload('Holidays.xlsx', [{ name:'Holidays', title:'FIRM HOLIDAYS', meta:[], header:['Date','Day','Holiday','Firm'],
+  rows: S.holidays.map(h => [h.date, h.day, h.name, h.firm ? firmName(h.firm) || h.firm : 'All firms']), widths:[12,6,40,30] }]);
 
 /* ---------------- FIRMS + OFFICE ---------------- */
 function firmOptions(sel){ return (S.firms || []).map(f => `<option value="${esc(f.code)}"${f.code === sel ? ' selected' : ''}>${esc(f.name)}</option>`).join(''); }
 function renderFirms(){
-  $('sFirm').innerHTML = firmOptions('F1');
+  $('sFirm').innerHTML = (S.firms || []).filter(f => myFirmCodes().indexOf(f.code) >= 0 || !(S.user || {}).role || (S.user || {}).role !== 'Admin').map(f => `<option value="${esc(f.code)}">${esc(f.name)}</option>`).join('');
+  if (S.admFirm) $('sFirm').value = S.admFirm;
   $('firmList').innerHTML = '<table><tr><th>Code</th><th>Firm</th><th>FRN</th><th></th></tr>' + (S.firms || []).map(f =>
-    `<tr><td>${esc(f.code)}</td><td>${esc(f.name)}<div class="muted">${esc(f.tagline)}${f.address ? ' · ' + esc(f.address) : ''}</div></td><td>${esc(f.frn)}</td>
+    `<tr><td>${esc(f.code)}</td><td>${esc(f.name)}<div class="muted">${esc(f.tagline)}${f.address ? ' · ' + esc(f.address) : ''}${f.prefix ? ' · Staff IDs ' + esc(f.prefix) + '001…' : ''}</div></td><td>${esc(f.frn)}</td>
      <td><button class="btn ghost sm" data-fe="${esc(f.code)}">Edit</button></td></tr>`).join('') + '</table>';
   $('firmList').querySelectorAll('[data-fe]').forEach(b => b.onclick = () => editFirm(S.firms.find(f => f.code === b.dataset.fe)));
 }
 function editFirm(f){
   $('fCode').value = f ? f.code : ''; $('fName').value = f ? f.name : ''; $('fTag').value = f ? f.tagline : 'Chartered Accountants';
-  $('fFrn').value = f ? f.frn : ''; $('fAddr').value = f ? f.address : ''; $('fContact').value = f ? f.contact : '';
+  $('fFrn').value = f ? f.frn : ''; $('fAddr').value = f ? f.address : ''; $('fContact').value = f ? f.contact : ''; $('fPrefix').value = f ? (f.prefix || '') : '';
   $('fSave').textContent = f ? `Save ${f.code}` : 'Add firm'; show($('fNew'), !!f);
 }
 $('fNew').onclick = () => editFirm(null);
 $('fSave').onclick = async () => {
   busy(true);
   try{
-    const r = await api('saveFirm', { code:$('fCode').value, name:$('fName').value, tagline:$('fTag').value, frn:$('fFrn').value, address:$('fAddr').value, contact:$('fContact').value });
+    const r = await api('saveFirm', { code:$('fCode').value, name:$('fName').value, tagline:$('fTag').value, frn:$('fFrn').value, address:$('fAddr').value, contact:$('fContact').value, prefix:$('fPrefix').value.trim().toUpperCase() });
     S.firms = r.firms; if ($('fCode').value === 'F1'){ const f = S.firms[0]; Object.assign(S.firm, f); $('firmName').textContent = f.name; $('firmSub').textContent = f.tagline; }
     renderFirms(); editFirm(null); flash('✔ ' + r.message, 's');
   }catch(e){ handleErr(e); } finally{ busy(false); }
@@ -2505,6 +2761,18 @@ function buildLeaveReg(items, from, to){
 $('regOpen').onclick = () => { show($('loginView'), false); show($('regView'), true); show($('rgDone'), false); window.scrollTo({ top:0 }); };
 $('rgBack').onclick = () => { show($('regView'), false); show($('loginView'), true); };
 $('rgCat').onchange = () => show($('rgArtBox'), $('rgCat').value === 'Articled Assistant');
+async function checkJoin(fromLink){
+  const c = $('rgCode').value.trim().toUpperCase(); S.rgFirm = '';
+  show($('rgFirmBox'), false); if (!c) return;
+  try{ const r = await api('joinInfo', { joinCode:c }); S.rgFirm = r.firmName;
+    $('rgFirmName').textContent = r.firmName; show($('rgFirmBox'), true); show($('rgCodeBox'), !fromLink); }
+  catch(e){ show($('rgCodeBox'), true); flash(e.message); }
+}
+$('rgCode').onchange = () => checkJoin(false);
+/* Invitation link: …/attendance/?join=CODE opens the registration form already set for that firm */
+(function(){ const j = new URLSearchParams(location.search).get('join');
+  if (!j || load('att_token')) return;
+  $('rgCode').value = j.trim().toUpperCase(); $('regOpen').click(); checkJoin(true); })();
 $('rgShowPw').onclick = () => { const p = $('rgPw'); p.type = p.type === 'password' ? 'text' : 'password'; $('rgShowPw').textContent = p.type === 'password' ? 'Show' : 'Hide'; };
 $('rgSend').onclick = async () => {
   const v = id => $(id).value.trim();
@@ -2514,11 +2782,13 @@ $('rgSend').onclick = async () => {
   if ($('rgCat').value === 'Articled Assistant' && !v('rgArtStart')) return flash('Enter your articleship start date.');
   if (v('rgPw').length < 8 || !/[a-z]/i.test(v('rgPw')) || !/\d/.test(v('rgPw'))) return flash('Password must be at least 8 characters with letters and numbers.');
   if (!v('rgCode')) return flash('Enter the firm joining code (ask the office).');
+  if (!S.rgFirm) await checkJoin(false);
+  if (!S.rgFirm) return;
   busy(true);
   try{
     const r = await api('register', { name:v('rgName'), mobile:v('rgMobile'), email:v('rgEmail'), category:$('rgCat').value,
       artStart:v('rgArtStart'), artScheme:$('rgScheme').value, password:v('rgPw'), joinCode:v('rgCode') });
-    $('rgDone').innerHTML = `✔ <b>Registration sent.</b><br>Your Employee ID: <b style="font-size:20px">${esc(r.empCode)}</b><br>
+    $('rgDone').innerHTML = `✔ <b>Registration sent to ${esc(S.rgFirm || 'the firm')}${/\.$/.test(S.rgFirm || '') ? '' : '.'}</b><br>Your Employee ID: <b style="font-size:20px">${esc(r.empCode)}</b><br>
       Note it down. You can log in with this ID and your password after the partner approves (the partner may change the ID – you will be told).`;
     show($('rgDone'), true); $('rgPw').value = ''; $('empCode').value = r.empCode;
     flash('✔ ' + r.message, 's');
