@@ -349,6 +349,17 @@
         <div class="muted" id="lvCount" style="margin-top:6px"></div>
         <br><button class="btn" id="lvApply">Apply</button>
       </div>
+      <div class="card">
+        <h2>⏰ Early leave permission</h2>
+        <div class="muted" id="elInfo">Ask in advance if you need to leave before office closing time.</div>
+        <div class="row">
+          <div><label>Date</label><input type="date" id="elDate"></div>
+          <div><label>I will leave at</label><input type="time" id="elTime"></div>
+        </div>
+        <label>Reason</label><input id="elReason" placeholder="e.g. Doctor's appointment / bank work / family function">
+        <br><br><button class="btn" id="elSend">Ask permission</button>
+        <div id="elList" style="margin-top:10px"></div>
+      </div>
       <div class="card" id="lvArticleCard" style="display:none"><h2>My articleship leave (ICAI)</h2><div id="lvArticle"></div></div>
       <div class="card"><h2>My leave</h2><div id="lvTotals" class="tot"></div><div id="lvList" class="muted">Loading…</div></div>
       <div class="card"><h2>Upcoming holidays</h2><div id="lvHol" class="muted"></div></div>
@@ -422,6 +433,11 @@
       </div>
 
       <div id="aLeave" class="hidden">
+        <div class="card" id="elAdmCard">
+          <h2>⏰ Early-leave requests</h2>
+          <div id="elPend" class="muted">Loading…</div>
+          <details style="margin-top:8px"><summary>Recent decisions</summary><div class="scroll" id="elRecent"></div></details>
+        </div>
         <div class="card">
           <h2>Leave applications</h2>
           <div class="row">
@@ -748,7 +764,7 @@
 /* ========= CONFIG: your Apps Script Web App URL (ends with /exec) ========= */
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNxOBL1h0AVLOfF6x1uAMLpDxzfzD3yAmJ57hT1DIrEyKhtz7F-oDQycnq-PXIYwID/exec';
 /* ========================================================================= */
-const APP_VERSION = '4.2';
+const APP_VERSION = '4.3';
 
 const $ = id => document.getElementById(id);
 const DEVICE_ID = (() => {
@@ -812,6 +828,7 @@ function startSession(r){
   S.user = r.user; S.sites = r.sites; S.status = r.status; S.strict = r.strict; S.maxAcc = r.maxAcc;
   S.exp = r.expense || null;
   S.firms = r.firms || []; S.holidays = r.holidays || []; S.leaveTypes = r.leaveTypes || []; S.category = r.category || '';
+  setTimeout(() => { if (S.token) api('myEarly').then(x => { S.myEarly = x.items; }).catch(() => {}); }, 1500);
   S.staffCats = r.staffCats || ['Staff','Articled Assistant','Partner','Other'];
   S.siteTypes = r.siteTypes || ['Client office','Factory / Plant','Warehouse / Godown','Branch','Other'];
   S.visitPurposes = r.visitPurposes || []; S.canAddSite = r.canAddSite !== false && !!r.siteTypes;
@@ -1142,7 +1159,7 @@ function applyRights(r){
   document.body.classList.toggle('limited', r.user.role === 'Admin' && !S.user.superAdmin);
   const any = (...ks) => ks.some(can);
   const tabOk = { aDash: any('dashboard'), aReport: any('attView','attXls','attEdit','attAddOut','attCancel','bdApprove','bdAdd'),
-    aExp: any('expView','expApprove','expApproveHigh','expPaid','expEdit'), aLeave: any('leaveView','leaveApprove','holidays'),
+    aExp: any('expView','expApprove','expApproveHigh','expPaid','expEdit'), aLeave: any('leaveView','leaveApprove','holidays','earlyApprove'),
     aPrint: any('rptAttSum','rptAttDet','rptVoucher','rptClient','rptLeave','artView','audit'),
     aStaff: any('staffView','staffForm','regApprove','regCode'), aSites: any('siteView','siteAdd','siteEdit','siteOffice','siteReview'),
     aAccess: !!S.user.superAdmin };
@@ -1486,7 +1503,9 @@ $('punchBtn').onclick = async () => {
     ['remarks','workDone','wpRef','pending'].forEach(id => $(id).value = '');
     show($('selfiePreview'), false); show($('camBtn'), true); show($('retakeBtn'), false);
     renderPunch();
-    flash('✔ ' + r.message + (type === 'OUT' ? '\n\nAny travel or other expenses today? Add them in the Expenses tab.' : ''), 's');
+    const hmNow = new Date().toTimeString().slice(0, 5), okToday = (S.myEarly || []).some(x => x.iso === todayISO() && x.status === 'Approved');
+    const earlyNote = type === 'OUT' && hmNow < earlyCut(todayISO()) && !okToday ? `\n\n⏰ Office closes at ${earlyCut(todayISO())}. If this is your last check-out today it will show as early leaving without permission – next time ask in the Leave tab.` : '';
+    flash('✔ ' + r.message + (type === 'OUT' ? '\n\nAny travel or other expenses today? Add them in the Expenses tab.' : '') + earlyNote, 's');
     if (type === 'OUT') api('me').then(m => { if (m.workTodo){ S.workTodo = m.workTodo; renderWork(); } }).catch(() => {});
   }catch(e){ handleErr(e); }
   finally{ busy(false); }
@@ -2201,6 +2220,17 @@ function workingDays(m, hol){
   return n;
 }
 function upto(m){ const t = todayISO(); return m.to < t ? m.to : t; }
+/* Early leaving: last check-out of a day before office closing time. Returns { 'EMP|iso': {t, ok} } */
+function earlyDays(sessions, rep){
+  const last = {}, open = {};
+  sessions.forEach(x => { const [d, mo, y] = x.date.split('-'), k = x.empCode + '|' + `${y}-${mo}-${d}`;
+    if (!x.outTime) open[k] = true; else if (!last[k] || x.outTime > last[k]) last[k] = x.outTime; });
+  const out = {};
+  Object.keys(last).forEach(k => { if (open[k]) return; const iso = k.split('|')[1];
+    if (iso === todayISO() || last[k] >= earlyCut(iso)) return;
+    out[k] = { t:last[k], ok:(rep.earlyOk || {})[k] || '' }; });
+  return out;
+}
 function buildAttSummary(m, sessions, rep){
   const hol = holSet(rep.holidays), late = hhmmToMin(S.firm.lateAfter || '10:15'), wd = workingDays(m, hol);
   const by = {};
@@ -2212,18 +2242,21 @@ function buildAttSummary(m, sessions, rep){
     if (x.inFence === 'No' || x.outFence === 'No') o.outside++;
     if (!x.outTime) o.missing++;
   });
-  let T = { days:0, visits:0, hours:0, late:0, outside:0, missing:0, leave:0 };
+  let T = { days:0, visits:0, hours:0, late:0, outside:0, missing:0, leave:0, early:0, noPerm:0 };
+  const ed = earlyDays(sessions, rep);
   const rows = Object.keys(by).sort((a,b) => by[a].name.localeCompare(by[b].name)).map((k, i) => {
     const o = by[k], lateDays = Object.values(o.firstIn).filter(t => hhmmToMin(t) > late).length;
+    const eK = Object.keys(ed).filter(x => x.split('|')[0] === k), eNo = eK.filter(x => !ed[x].ok).length;
+    T.early += eK.length; T.noPerm += eNo;
     const lv = leaveDays(k, rep.leaves, m.from, upto(m), hol).n;
     T.days += o.days.size; T.visits += o.visits; T.hours += o.hours; T.late += lateDays; T.outside += o.outside; T.missing += o.missing; T.leave += lv;
     return `<tr><td>${i+1}</td><td>${esc(o.name)}<br><small>${esc(k)}</small></td><td class="num">${o.days.size}</td><td class="num">${lv}</td><td class="num">${Math.max(0, wd - o.days.size - lv)}</td>
       <td class="num">${o.visits}</td><td class="num">${o.hours.toFixed(2)}</td><td class="num">${o.days.size ? (o.hours / o.days.size).toFixed(2) : '–'}</td>
-      <td class="num">${lateDays}</td><td class="num">${o.outside}</td><td class="num">${o.missing}</td><td>${esc([...o.clients].join(', '))}</td></tr>`;
+      <td class="num">${lateDays}</td><td class="num">${eK.length}${eNo ? ` <small style="color:#b00020">(${eNo} without permission)</small>` : ''}</td><td class="num">${o.outside}</td><td class="num">${o.missing}</td><td>${esc([...o.clients].join(', '))}</td></tr>`;
   }).join('');
-  return letterhead('MONTHLY ATTENDANCE SUMMARY', `<b>Period:</b> ${esc(m.label)}`, `<b>Working days (Mon–Sat, excl. ${Object.keys(hol).length} holiday/s) to date:</b> ${wd}<br><b>Late after:</b> ${esc(S.firm.lateAfter || '10:15')}`) +
-    `<table><tr><th>#</th><th>Staff</th><th>Days present</th><th>Approved leave</th><th>Days not accounted*</th><th>Visits</th><th>Total hours</th><th>Avg hrs / day</th><th>Late days</th><th>Outside geo-fence</th><th>Missing check-out</th><th>Clients visited</th></tr>${rows}
-     <tr class="totrow"><td></td><td>Total</td><td class="num">${T.days}</td><td class="num">${T.leave}</td><td></td><td class="num">${T.visits}</td><td class="num">${T.hours.toFixed(2)}</td><td></td><td class="num">${T.late}</td><td class="num">${T.outside}</td><td class="num">${T.missing}</td><td></td></tr></table>
+  return letterhead('MONTHLY ATTENDANCE SUMMARY', `<b>Period:</b> ${esc(m.label)}`, `<b>Working days (Mon–Sat, excl. ${Object.keys(hol).length} holiday/s) to date:</b> ${wd}<br><b>Late after:</b> ${esc(S.firm.lateAfter || '10:15')} · <b>Early before:</b> ${esc(S.firm.earlyBefore || '18:00')}${S.firm.earlyBeforeSat && S.firm.earlyBeforeSat !== S.firm.earlyBefore ? ' (Sat ' + esc(S.firm.earlyBeforeSat) + ')' : ''}`) +
+    `<table><tr><th>#</th><th>Staff</th><th>Days present</th><th>Approved leave</th><th>Days not accounted*</th><th>Visits</th><th>Total hours</th><th>Avg hrs / day</th><th>Late days</th><th>Early leaving days</th><th>Outside geo-fence</th><th>Missing check-out</th><th>Clients visited</th></tr>${rows}
+     <tr class="totrow"><td></td><td>Total</td><td class="num">${T.days}</td><td class="num">${T.leave}</td><td></td><td class="num">${T.visits}</td><td class="num">${T.hours.toFixed(2)}</td><td></td><td class="num">${T.late}</td><td class="num">${T.early}${T.noPerm ? ` <small>(${T.noPerm} w/o perm.)</small>` : ''}</td><td class="num">${T.outside}</td><td class="num">${T.missing}</td><td></td></tr></table>
      <div class="small">* Working days (Mon–Sat, excluding firm holidays) with neither a punch nor approved leave.${Object.keys(hol).length ? ' Holidays: ' + esc(rep.holidays.map(h => h.date + ' ' + h.name).join(', ')) + '.' : ''}</div>
      ${sigBlock()}` + genLine(true);
 }
@@ -2233,12 +2266,14 @@ function buildAttDetail(m, sessions, rep){
   const late = hhmmToMin(S.firm.lateAfter || '10:15');
   let tot = 0; const days = new Set(), firstIn = {};
   sessions.forEach(x => { days.add(x.date); if (x.inTime && (!firstIn[x.date] || x.inTime < firstIn[x.date])) firstIn[x.date] = x.inTime; });
+  const ed = earlyDays(sessions, rep);
   const rows = sessions.map((x, i) => {
+    const [ed1, ed2, ed3] = x.date.split('-'), eo = ed[x.empCode + '|' + `${ed3}-${ed2}-${ed1}`], isEarly = eo && eo.t === x.outTime;
     tot += Number(x.hours)||0;
     const [d, mo, y] = x.date.split('-'), day = new Date(+y, +mo-1, +d).toLocaleDateString('en-IN', { weekday:'short' });
     const isLate = firstIn[x.date] === x.inTime && hhmmToMin(x.inTime) > late;
     return `<tr><td>${i+1}</td><td>${esc(x.date)}<br><small>${day}</small></td><td>${esc(x.client)}<br><small>${esc(x.site)}</small></td>
-      <td>${esc(x.inTime)}${isLate ? ' (late)' : ''}</td><td>${esc(x.outTime) || '—'}</td><td class="num">${x.hours ? Number(x.hours).toFixed(2) : ''}</td>
+      <td>${esc(x.inTime)}${isLate ? ' (late)' : ''}</td><td>${esc(x.outTime) || '—'}${isEarly ? (eo.ok ? ' (early – permitted)' : ' <b>(early – no permission)</b>') : ''}</td><td class="num">${x.hours ? Number(x.hours).toFixed(2) : ''}</td>
       <td>${x.inFence === 'No' || x.outFence === 'No' ? 'Outside' : 'OK'}</td>
       <td>${x.workArea ? `<b>${esc(x.workArea)}</b>: ` : ''}${esc(x.workDone)}${x.wpRef ? `<br><small>WP: ${esc(x.wpRef)}</small>` : ''}${x.pending ? `<br><small>Pending: ${esc(x.pending)}</small>` : ''}</td>
       <td><small>${esc([x.flags, x.remarks].filter(Boolean).join('; '))}</small></td></tr>`;
@@ -2582,7 +2617,7 @@ function initLeave(){
     $('lvType').innerHTML = '<option value="">— Select —</option>' + S.leaveTypes.map(t => `<option>${esc(t)}</option>`).join('');
     lvReady = true;
   }
-  lvCount(); loadMyLeave();
+  lvCount(); loadMyLeave(); loadMyEarly();
 }
 function holSet(list){ const h = {}; (list || S.holidays || []).forEach(x => h[x.iso] = x.name); return h; }
 function isoAdd(iso, n){ const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); }
@@ -2627,11 +2662,60 @@ async function loadMyLeave(){
   }catch(e){ $('lvList').textContent = ''; handleErr(e); }
 }
 
+/* ---------------- EARLY LEAVE ---------------- */
+function earlyCut(iso){ const f = S.firm || {}; return new Date(iso + 'T12:00:00').getDay() === 6 ? (f.earlyBeforeSat || f.earlyBefore || '18:00') : (f.earlyBefore || '18:00'); }
+function elPill(st){ return statusPill(st === 'Withdrawn' ? 'Rejected' : st).replace(/>[^<]+</, '>' + esc(st) + '<'); }
+function renderMyEarly(items){
+  S.myEarly = items || [];
+  $('elList').innerHTML = S.myEarly.length ? S.myEarly.map(x => `<div class="hist-item">${elPill(x.status)} <b>${esc(x.date)}</b> · leave at <b>${esc(x.at)}</b>
+      <div>${esc(x.reason)}</div>${x.remark ? `<div class="muted">Partner: ${esc(x.remark)}</div>` : ''}${x.by && x.status !== 'Withdrawn' ? `<div class="muted">${esc(x.status)} by ${esc(x.by)}</div>` : ''}
+      ${x.status === 'Pending' || (x.status === 'Approved' && x.iso >= todayISO()) ? `<button class="btn ghost sm" data-elw="${esc(x.id)}">Withdraw</button>` : ''}</div>`).join('') : '<div class="muted">No early-leave requests yet.</div>';
+  $('elList').querySelectorAll('[data-elw]').forEach(b => b.onclick = async () => {
+    busy(true); try{ const r = await api('cancelEarly', { id:b.dataset.elw }); renderMyEarly(r.items); flash('✔ ' + r.message, 's'); }catch(e){ handleErr(e); } finally{ busy(false); }
+  });
+}
+async function loadMyEarly(){
+  if (!$('elDate').value) $('elDate').value = todayISO();
+  const upd = () => { const c = earlyCut($('elDate').value || todayISO()); $('elInfo').textContent = `Office closes at ${c} on that day. Leaving before it without permission is marked “Early leaving” in reports.`; $('elTime').max = c; };
+  $('elDate').onchange = upd; upd();
+  try{ const r = await api('myEarly'); renderMyEarly(r.items); }catch(e){ $('elList').textContent = ''; }
+}
+$('elSend').onclick = async () => {
+  if (!$('elDate').value || !$('elTime').value) return flash('Enter the date and the time you will leave.');
+  if ($('elReason').value.trim().length < 5) return flash('Enter the reason.');
+  busy(true);
+  try{ const r = await api('requestEarly', { date:$('elDate').value, time:$('elTime').value, reason:$('elReason').value.trim() });
+    $('elReason').value = ''; $('elTime').value = ''; renderMyEarly(r.items); flash('✔ ' + r.message, 's'); }
+  catch(e){ handleErr(e); } finally{ busy(false); }
+};
+/* Admin: approve / reject early-leave requests */
+async function loadAdmEarly(){
+  show($('elAdmCard'), can('earlyApprove') || can('leaveView'));
+  if (!can('earlyApprove') && !can('leaveView')) return;
+  try{ drawAdmEarly(await api('listEarly')); }catch(e){ $('elPend').textContent = ''; handleErr(e); }
+}
+function drawAdmEarly(r){
+  const ap = can('earlyApprove');
+  $('elPend').innerHTML = r.pending.length ? r.pending.map(x => `<div class="hist-item" data-elid="${esc(x.id)}"><b>${esc(x.name)}</b> <span class="muted">${esc(x.empCode)}</span>
+      <div>📅 <b>${esc(x.date)}</b> · leave at <b>${esc(x.at)}</b> <span class="muted">(office closes ${esc(earlyCut(x.iso))})</span></div><div>${esc(x.reason)}</div>
+      <div class="muted">Asked on ${esc(x.requestedOn)}</div>
+      ${ap ? `<input class="elRm" placeholder="Remark (compulsory for Reject)" style="margin-top:6px"><div class="row" style="margin-top:6px"><button class="btn sm in" data-ela="approve">✓ Approve</button><button class="btn sm outb" data-ela="reject">✗ Reject</button></div>` : ''}</div>`).join('')
+    : '<div class="muted">No pending early-leave requests ✔</div>';
+  $('elRecent').innerHTML = r.recent.length ? '<table><tr><th>Staff</th><th>Date</th><th>Leave at</th><th>Reason</th><th>Status</th><th>By / remark</th></tr>' + r.recent.map(x =>
+    `<tr><td>${esc(x.name)}</td><td>${esc(x.date)}</td><td>${esc(x.at)}</td><td>${esc(x.reason)}</td><td>${elPill(x.status)}</td><td>${esc(x.by)}${x.remark ? '<div class="muted">' + esc(x.remark) + '</div>' : ''}</td></tr>`).join('') + '</table>' : '<div class="muted">None yet.</div>';
+  $('elPend').querySelectorAll('[data-ela]').forEach(b => b.onclick = async () => {
+    const card = b.closest('[data-elid]');
+    busy(true);
+    try{ const x = await api('reviewEarly', { id:card.dataset.elid, decision:b.dataset.ela, remark:card.querySelector('.elRm').value }); drawAdmEarly(x); flash('✔ ' + x.message, 's'); }
+    catch(e){ handleErr(e); } finally{ busy(false); }
+  });
+}
+
 /* ---------------- LEAVE + HOLIDAYS (admin) ---------------- */
 let laReady = false;
 function initAdminLeave(){
   if (!laReady){ const y = todayISO().slice(0,4); $('laFrom').value = y + '-01-01'; $('laTo').value = y + '-12-31'; laReady = true; }
-  runLeave(); renderHolidays(S.holidays);
+  loadAdmEarly(); if (can('leaveView') || can('leaveApprove')) runLeave(); renderHolidays(S.holidays);
 }
 async function runLeave(){
   busy(true);
